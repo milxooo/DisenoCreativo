@@ -33,5 +33,11 @@ Alcance: solo el entorno/tablero. Sin personajes, UI ni lógica de juego. Por ah
 - `Scenes/Biblioteca_Preview.unity`: todos los prefabs a la vista con la cámara isométrica.
 - Se regenera con el menú **Roba Colores > Fase 2 - Generar biblioteca** (`Editor/MapLibraryGenerator.cs`). Para cambiar una pieza, edítala ahí.
 
+## Mapa A (Fase 3)
+- Escena: `Scenes/MapaA.unity`. Tablero de 64x48 bloques dentro de un marco de madera. INICIO en z bajo (muelle sur), META en z alto (muelle norte). Con la cámara isométrica el mapa se ve girado 45°.
+- `Terreno/`: 12 mallas combinadas (chunks de 16x16) con el mismo atlas. `Camino/`: casillas (prefabs). `Decoracion/`: props (prefabs).
+- Casillas: `Casilla_<índice>_<Color>`. El índice es la distancia en casillas desde INICIO por el camino más corto (`PathTile.Index`); en las ramas paralelas varias casillas comparten índice, y META tiene el índice más alto de su recorrido. Los cruces/bifurcaciones llevan sufijo con el nombre del nodo (S, M, N1...).
+- Carteles "INICIO" y "META": `Textures/MapSigns.png`, rasterizado con Pirata One y pixelado (sin TextMeshPro). Prefabs `Cartel_Inicio` y `Cartel_Meta`.
+
 ## Editar el mapa
-Pendiente (Fases 2-3).
+El layout vive en `Editor/MapAGenerator.cs`: nodos y tramos del camino (`Nodes`, `BuildEdges`), clasificación del terreno (`Classify`) y decoración (`Decorate`). Cambia los datos y ejecuta **Roba Colores > Fase 3 - Generar Mapa A**, que regenera la escena completa. No edites a mano los chunks de `Terreno/`, se sobrescriben.
