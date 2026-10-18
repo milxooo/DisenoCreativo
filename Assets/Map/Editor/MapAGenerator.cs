@@ -300,9 +300,9 @@ namespace RobaColores.Map.Editor
 
             // Escenario
             Place("RosaDeLosVientos", 5.5f, 43.5f, 0, GroundTop);
-            Place("Kraken", 17f, 27f, 0, 0.2f);
-            Place("Remolino", 21f, 21f, 0, 0.43f);
-            Place("BarcoPirata", 49f, 29f, 30, 0.25f);
+            Animate(Place("Kraken", 17f, 27f, 0, 0.2f), 0.1f, 0.35f, 0f);
+            Animate(Place("Remolino", 21f, 21f, 0, 0.43f), 0.02f, 0.4f, 25f);
+            Animate(Place("BarcoPirata", 49f, 29f, 30, 0.25f), 0.07f, 0.3f, 0f);
             Place("Ancla", 34f, 34f, 20);
             Place("XTesoro", 3f, 14f, 0, GroundTop);
             Place("Montana", 6f, 5f, 0);
@@ -315,13 +315,20 @@ namespace RobaColores.Map.Editor
             Place("Cofre", 55.5f, 6.5f, 30);
         }
 
-        static void Place(string name, float x, float z, float yaw, float? y = null)
+        static void Animate(GameObject go, float amplitude, float speed, float spin)
+        {
+            go.AddComponent<Bobbing>().Configure(amplitude, speed, spin);
+            GameObjectUtility.SetStaticEditorFlags(go, 0);   // se mueve: fuera del static batching
+        }
+
+        static GameObject Place(string name, float x, float z, float yaw, float? y = null)
         {
             string dir = name.StartsWith("Casilla") ? "PathTiles" : "Props";
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Map/Prefabs/" + dir + "/" + name + ".prefab");
             var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, decoRoot);
             float h = y ?? (groundKinds[Mathf.Clamp((int)x, 0, Width - 1), Mathf.Clamp((int)z, 0, Depth - 1)] == Kind.Water ? WaterTop : GroundTop);
             go.transform.SetPositionAndRotation(new Vector3(x, h, z), Quaternion.Euler(0, yaw, 0));
+            return go;
         }
 
         // ---------------- Luz y camara ----------------
@@ -333,7 +340,8 @@ namespace RobaColores.Map.Editor
             var l = lg.AddComponent<Light>();
             l.type = LightType.Directional;
             l.intensity = 1.15f;
-            l.shadows = LightShadows.None;
+            l.shadows = LightShadows.None;   // look plano y menos costo; una sola luz direccional
+            l.color = new Color(1f, 0.96f, 0.88f);
             lg.transform.rotation = Quaternion.Euler(50, 30, 0);
 
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;

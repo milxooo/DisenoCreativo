@@ -39,5 +39,10 @@ Alcance: solo el entorno/tablero. Sin personajes, UI ni lógica de juego. Por ah
 - Casillas: `Casilla_<índice>_<Color>`. El índice es la distancia en casillas desde INICIO por el camino más corto (`PathTile.Index`); en las ramas paralelas varias casillas comparten índice, y META tiene el índice más alto de su recorrido. Los cruces/bifurcaciones llevan sufijo con el nombre del nodo (S, M, N1...).
 - Carteles "INICIO" y "META": `Textures/MapSigns.png`, rasterizado con Pirata One y pixelado (sin TextMeshPro). Prefabs `Cartel_Inicio` y `Cartel_Meta`.
 
+## Pulido y rendimiento (Fase 5)
+- Iluminación: una sola luz direccional (sin sombras en tiempo real, look plano) y ambiente plano frío. Sin luces extra.
+- Ambientación: `Scripts/Bobbing.cs` balancea Kraken, Barco y Remolino (solo visual; esos tres quedan fuera del static batching).
+- Medido en `MapaA.unity`: 185 renderers (182 con Batching Static), 2 materiales (`MapAtlas`, `MapSigns`), ~61k triángulos, 1 luz.
+
 ## Editar el mapa
 El layout vive en `Editor/MapAGenerator.cs`: nodos y tramos del camino (`Nodes`, `BuildEdges`), clasificación del terreno (`Classify`) y decoración (`Decorate`). Cambia los datos y ejecuta **Roba Colores > Fase 3 - Generar Mapa A**, que regenera la escena completa. No edites a mano los chunks de `Terreno/`, se sobrescriben.
