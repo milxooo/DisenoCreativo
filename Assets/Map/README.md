@@ -22,7 +22,16 @@ Alcance: solo el entorno/tablero. Sin personajes, UI ni lógica de juego. Por ah
 | Pergamino | EBDDB5 | Negro | 2B2B33 |
 
 ## Fuente
-Pendiente: candidata Pirata One (licencia OFL). Se documentará aquí al añadirla.
+**Pirata One** (Google Fonts, SIL Open Font License 1.1). Estilo gótico/pirata, legible a tamaño grande, y la OFL permite incluirla en videojuegos. Archivo y licencia en `Fonts/`. Falta crear el asset TextMeshPro con filtro Point al hacer los carteles (Fase 3).
+
+## Biblioteca (Fase 2)
+- `Textures/MapAtlas.png`: atlas 128x128 (8x8 celdas de 16 px) generado por código. Un solo material: `Materials/MapAtlas.mat` (URP Lit sin brillo).
+- `Meshes/`: una malla por prefab con UV al atlas. Pivote abajo al centro, Batching Static.
+- `Prefabs/Blocks`: Pasto, Tierra, Arena, Madera, Roca, Agua (0.9 de alto), Pergamino. Bloque = 1x1x1.
+- `Prefabs/PathTiles`: `Casilla_<Color>` x7. Óvalo de 1.8x1.4 con borde oscuro y un glifo en relieve por color (aro, cruz, X, triángulo, líneas horizontales, líneas verticales, cuadrado), con componente `PathTile`.
+- `Prefabs/Props`: Barril, Caja, Cofre, Palmera, BanderaPirata, Ancla, Canon, Calavera, Cartel, PosteMuelle, RosaDeLosVientos, XTesoro, Kraken, BarcoPirata, Remolino, CuevaArco, Montana, Roca.
+- `Scenes/Biblioteca_Preview.unity`: todos los prefabs a la vista con la cámara isométrica.
+- Se regenera con el menú **Roba Colores > Fase 2 - Generar biblioteca** (`Editor/MapLibraryGenerator.cs`). Para cambiar una pieza, edítala ahí.
 
 ## Editar el mapa
 Pendiente (Fases 2-3).
