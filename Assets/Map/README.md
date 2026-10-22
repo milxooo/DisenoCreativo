@@ -36,13 +36,30 @@ Alcance: solo el entorno/tablero. Sin personajes, UI ni lógica de juego. Por ah
 ## Mapa A (Fase 3)
 - Escena: `Scenes/MapaA.unity`. Tablero de 64x48 bloques dentro de un marco de madera. INICIO en z bajo (muelle sur), META en z alto (muelle norte). Con la cámara isométrica el mapa se ve girado 45°.
 - `Terreno/`: 12 mallas combinadas (chunks de 16x16) con el mismo atlas. `Camino/`: casillas (prefabs). `Decoracion/`: props (prefabs).
-- Casillas: `Casilla_<índice>_<Color>`. El índice es la distancia en casillas desde INICIO por el camino más corto (`PathTile.Index`); en las ramas paralelas varias casillas comparten índice, y META tiene el índice más alto de su recorrido. Los cruces/bifurcaciones llevan sufijo con el nombre del nodo (S, M, N1...).
-- Carteles "INICIO" y "META": `Textures/MapSigns.png`, rasterizado con Pirata One y pixelado (sin TextMeshPro). Prefabs `Cartel_Inicio` y `Cartel_Meta`.
+- Casillas: `Casilla_<índice>_<Color>`. El índice es la distancia en casillas desde INICIO por el camino más corto (`PathTile.Index`); en las ramas paralelas varias casillas comparten índice, y META tiene el índice más alto de su recorrido. Los nodos llevan sufijo con su nombre (S, M, A1, C1, A2, C2, X).
+- Carteles "INICIO" y "META": `Textures/MapSigns.png`, rasterizado con Pirata One y pixelado (sin TextMeshPro). Se usan en los prefabs `ArcoInicio` y `ArcoMeta` (también quedan `Cartel_Inicio` y `Cartel_Meta`, sin uso en el mapa actual).
 
 ## Pulido y rendimiento (Fase 5)
 - Iluminación: una sola luz direccional (sin sombras en tiempo real, look plano) y ambiente plano frío. Sin luces extra.
 - Ambientación: `Scripts/Bobbing.cs` balancea Kraken, Barco y Remolino (solo visual; esos tres quedan fuera del static batching).
 - Medido en `MapaA.unity`: 185 renderers (182 con Batching Static), 2 materiales (`MapAtlas`, `MapSigns`), ~61k triángulos, 1 luz.
 
+## Rediseño del recorrido (equilibrio de rutas)
+Problema original: las rutas laterales eran más largas que las centrales (8 rutas INICIO→META de 43.9 a 75.5 unidades, 72 % de diferencia; 21 a 36 pasos).
+
+Ahora el camino es un grafo de 7 nodos (`S`, `M`, `A1`, `C1`, `A2`, `C2`, `X`) en tres etapas: salida (S→A1/C1), tramo central y llegada (A2/C2→M).
+- Los dos carriles laterales (A1→A2 y C1→C2) se arquean hacia afuera hasta medir lo mismo que el cruce central en X (A1→X→C2 y C1→X→A2).
+- El cruce X está en el punto medio de las dos diagonales, así que entrar o salir por él no cambia la longitud.
+- Resultado medido con **Roba Colores > Analizar rutas Mapa A**: 6 rutas, todas de 67.86 unidades y 32 pasos (diferencia 0 %). Radio de curva mínimo 3.7.
+- Las rutas se calculan "hacia adelante" (solo aristas que acercan a META). No hay rutas opcionales fuera de esas 6.
+
+Lectura del mapa:
+- INICIO: muelle de madera, arco con cartel rojo y banderas. META: plataforma dorada, arco alto con cartel dorado y cofre gigante.
+- Un farol marca cada intersección (A1, C1, A2, C2, X) y flechas rojas junto al camino apuntan hacia META.
+- El sendero es una cinta de arena de 3 bloques con borde fino de pasto; todo lo demás es agua o islas separadas por agua (no transitables).
+
 ## Editar el mapa
-El layout vive en `Editor/MapAGenerator.cs`: nodos y tramos del camino (`Nodes`, `BuildEdges`), clasificación del terreno (`Classify`) y decoración (`Decorate`). Cambia los datos y ejecuta **Roba Colores > Fase 3 - Generar Mapa A**, que regenera la escena completa. No edites a mano los chunks de `Terreno/`, se sobrescriben.
+- Trazado del camino: `Editor/MapALayout.cs` (`MapALayoutBalanced`: `LaneSpacing`, `Row1`, nodos y aristas). Las longitudes se igualan solas con un arco/curva por tramo.
+- Terreno y decoración: `Editor/MapAGenerator.cs` (`Classify`, `Decorate`).
+- Cambia los datos y ejecuta **Roba Colores > Fase 3 - Generar Mapa A** (regenera la escena completa). No edites a mano los chunks de `Terreno/`, se sobrescriben.
+- `MapALayoutLegacy` conserva el layout anterior solo para comparar (menú **Analizar rutas Mapa A** imprime antes y después).

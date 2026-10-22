@@ -42,7 +42,52 @@ namespace RobaColores.Map.Editor
 
             BuildSign("Cartel_Inicio", 0.5f, m);
             BuildSign("Cartel_Meta", 0f, m);
+            BuildGate("ArcoInicio", 0.5f, MapAtlasGenerator.TileRed, m, 0f);
+            BuildGate("ArcoMeta", 0f, MapAtlasGenerator.Gold, m, 2.4f);
             AssetDatabase.SaveAssets();
+        }
+
+        // Arco de madera con el cartel grande y banderas de color: marca INICIO (rojo) y META (dorado).
+        static void BuildGate(string name, float v0, int flagCell, Material signMat, float lift)
+        {
+            int planks = MapAtlasGenerator.Planks, trunk = MapAtlasGenerator.Trunk;
+            var b = new VoxelMeshBuilder()
+                .Add(-3.2f, 0, 0, 0.7f, 4f + lift, 0.7f, planks)
+                .Add(3.2f, 0, 0, 0.7f, 4f + lift, 0.7f, planks)
+                .Add(0, 4f + lift, 0, 7.4f, 0.5f, 0.7f, planks)
+                .Add(-3.2f, 4.5f + lift, 0, 0.2f, 1.4f, 0.2f, trunk).Add(-2.6f, 5.3f + lift, 0, 1f, 0.6f, 0.05f, flagCell)
+                .Add(3.2f, 4.5f + lift, 0, 0.2f, 1.4f, 0.2f, trunk).Add(2.6f, 5.3f + lift, 0, 1f, 0.6f, 0.05f, flagCell);
+            var mesh = b.ToMesh(name);
+            string meshPath = "Assets/Map/Meshes/" + name + ".asset";
+            AssetDatabase.DeleteAsset(meshPath);
+            AssetDatabase.CreateAsset(mesh, meshPath);
+
+            var root = new GameObject(name);
+            root.AddComponent<MeshFilter>().sharedMesh = mesh;
+            root.AddComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Map/Materials/MapAtlas.mat");
+            GameObjectUtility.SetStaticEditorFlags(root, StaticEditorFlags.BatchingStatic);
+
+            var q = new Mesh { name = name + "_Texto" };
+            float hx = 2.8f, y0 = 1.6f + lift, y1 = 3.84f + lift, z = -0.37f;
+            q.vertices = new[] { new Vector3(-hx, y0, z), new Vector3(-hx, y1, z), new Vector3(hx, y1, z), new Vector3(hx, y0, z) };
+            q.normals = new[] { Vector3.back, Vector3.back, Vector3.back, Vector3.back };
+            q.uv = new[] { new Vector2(0, v0), new Vector2(0, v0 + 0.5f), new Vector2(1, v0 + 0.5f), new Vector2(1, v0) };
+            q.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            if (Vector3.Dot(Vector3.Cross(q.vertices[1] - q.vertices[0], q.vertices[2] - q.vertices[0]), Vector3.back) < 0)
+                q.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+            q.RecalculateBounds();
+            string qPath = "Assets/Map/Meshes/" + name + "_Texto.asset";
+            AssetDatabase.DeleteAsset(qPath);
+            AssetDatabase.CreateAsset(q, qPath);
+
+            var sign = new GameObject("Texto");
+            sign.transform.SetParent(root.transform, false);
+            sign.AddComponent<MeshFilter>().sharedMesh = q;
+            sign.AddComponent<MeshRenderer>().sharedMaterial = signMat;
+            GameObjectUtility.SetStaticEditorFlags(sign, StaticEditorFlags.BatchingStatic);
+
+            PrefabUtility.SaveAsPrefabAsset(root, "Assets/Map/Prefabs/Props/" + name + ".prefab");
+            Object.DestroyImmediate(root);
         }
 
         static void BuildSign(string name, float v0, Material mat)

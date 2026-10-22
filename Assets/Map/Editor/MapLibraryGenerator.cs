@@ -287,6 +287,37 @@ namespace RobaColores.Map.Editor
             Prop("Roca", b => b
                 .Add(0, 0, 0, 1.2f, 0.8f, 1f, Rock)
                 .Add(0.2f, 0.8f, 0, 0.7f, 0.4f, 0.6f, Rock));
+
+            // Guia direccional: flecha plana que apunta hacia +X local (hacia META cuando se orienta con el camino).
+            Prop("Flecha", b => b
+                .Add(-0.15f, 0, 0, 0.6f, 0.08f, 0.2f, TileRed)
+                .Add(0.30f, 0, 0, 0.2f, 0.08f, 0.7f, TileRed)
+                .Add(0.45f, 0, 0, 0.15f, 0.08f, 0.46f, TileRed)
+                .Add(0.58f, 0, 0, 0.12f, 0.08f, 0.22f, TileRed));
+
+            // Farol de interseccion: marca los nodos donde se puede elegir ruta.
+            Prop("Farol", b => b
+                .Add(0, 0, 0, 0.25f, 1.6f, 0.25f, Trunk)
+                .Add(0, 1.6f, 0, 0.5f, 0.4f, 0.5f, Gold)
+                .Add(0, 2.0f, 0, 0.64f, 0.1f, 0.64f, Outline));
+
+            // Meta: plataforma con cofre gigante, montones de oro y banderas.
+            Prop("TesoroMeta", b => b
+                .Add(0, 0, 0, 7f, 0.5f, 3.2f, Planks)
+                .Add(0, 0, -1.9f, 4.5f, 0.25f, 0.6f, Planks)
+                .Add(0, 0.5f, 0.2f, 2.6f, 1f, 1.6f, PlankDark)
+                .Add(0, 1.5f, 0.2f, 2.6f, 0.6f, 1.6f, Planks)
+                .Add(-0.8f, 0.5f, 0.2f, 0.2f, 1.6f, 1.7f, Gold)
+                .Add(0.8f, 0.5f, 0.2f, 0.2f, 1.6f, 1.7f, Gold)
+                .Add(0, 0.9f, 1.03f, 0.5f, 0.6f, 0.08f, Gold)
+                .Add(-2.6f, 0.5f, -0.6f, 0.9f, 0.5f, 0.9f, Gold)
+                .Add(2.6f, 0.5f, -0.6f, 0.9f, 0.7f, 0.9f, Gold)
+                .Add(-2.9f, 0.5f, 0.8f, 0.6f, 0.4f, 0.6f, Gold)
+                .Add(2.9f, 0.5f, 0.8f, 0.6f, 0.3f, 0.6f, Gold)
+                .Add(-3.2f, 0.5f, 0.2f, 0.15f, 3f, 0.15f, Trunk)
+                .Add(-2.7f, 2.9f, 0.2f, 1f, 0.6f, 0.05f, ClothBlack)
+                .Add(3.2f, 0.5f, 0.2f, 0.15f, 3f, 0.15f, Trunk)
+                .Add(2.7f, 2.9f, 0.2f, 1f, 0.6f, 0.05f, ClothBlack));
         }
     }
 }

@@ -7,62 +7,20 @@ using static RobaColores.Map.Editor.MapAtlasGenerator;
 
 namespace RobaColores.Map.Editor
 {
-    // Fase 3: construye la escena del Mapa A (horizontal) a partir de la biblioteca.
-    // El layout (nodos y tramos del camino, islas y decoracion) esta definido aqui abajo.
+    // Construye la escena del Mapa A (horizontal) a partir de la biblioteca.
+    // El trazado del camino vive en MapALayoutBalanced; aqui estan el terreno y la decoracion.
     public static class MapAGenerator
     {
         const int Width = 64, Depth = 48;
-        const float GroundTop = 1f, WaterTop = 0.4f, TileSpacing = 2.1f;
+        const float GroundTop = 1f, WaterTop = 0.4f;
         const string ScenePath = "Assets/Map/Scenes/MapaA.unity";
         const string MeshDir = "Assets/Map/Meshes/MapaA";
 
-        enum Kind { Water, Sand, Grass, Rock, Wood, Parchment }
+        enum Kind { Water, Sand, Grass, Rock, Wood, Parchment, Gold }
 
-        // ---- Layout del camino (coordenadas de mundo; x a la derecha, z hacia META) ----
-        static readonly Dictionary<string, Vector2> Nodes = new Dictionary<string, Vector2>
-        {
-            { "S", V(32, 3) },   // INICIO
-            { "M", V(32, 45) },  // META
-            { "N1", V(30, 17) }, { "N2", V(28, 29) }, { "N3", V(37, 24) }, { "N4", V(39, 30) },
-            { "N5", V(14, 9) }, { "N6", V(8, 32) }, { "N7", V(57, 27) },
-            { "P", V(38, 17) }, { "Q", V(31, 24) }, { "X", V(34, 22) },   // X = cruce
-        };
-
-        struct Edge
-        {
-            public string a, b;
-            public Vector2[] via;
-            public List<Vector2> pts;
-            public float length;
-            public int count;
-        }
-
-        static Edge E(string a, string b, params Vector2[] via) { return new Edge { a = a, b = b, via = via }; }
         static Vector2 V(float x, float z) { return new Vector2(x, z); }
 
-        static Edge[] BuildEdges()
-        {
-            return new[]
-            {
-                E("S", "N5", V(24, 5)),
-                E("N5", "N6", V(8, 16), V(6, 24)),
-                E("N6", "M", V(12, 38), V(18, 42), V(26, 44)),
-                E("S", "N1", V(31, 10)),
-                E("N1", "Q"),
-                E("Q", "N2"),
-                E("N2", "M", V(30, 35), V(30, 41)),
-                E("S", "P", V(36, 10)),
-                E("P", "N3"),
-                E("N3", "N4"),
-                E("N4", "M", V(38, 36), V(36, 41)),
-                E("S", "N7", V(40, 5), V(48, 7), V(54, 12), V(57, 19)),
-                E("N7", "M", V(52, 33), V(46, 37), V(40, 42)),
-                E("N1", "N5", V(24, 14), V(19, 11)),
-                E("N4", "N7", V(45, 29), V(51, 28)),
-                E("N6", "N2", V(14, 31), V(21, 32)),
-                E("N1", "X"), E("X", "N3"), E("Q", "X"), E("X", "P"),
-            };
-        }
+        static readonly string[] Junctions = { "A1", "C1", "A2", "C2", "X" };
 
         [MenuItem("Roba Colores/Fase 3 - Generar Mapa A")]
         public static void Run()
@@ -74,24 +32,14 @@ namespace RobaColores.Map.Editor
             var root = new GameObject("MapaA");
             var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Map/Materials/MapAtlas.mat");
 
-            var edges = BuildEdges();
+            var layout = MapALayoutBalanced.Build();
             var pathPts = new List<Vector2>();
-            for (int i = 0; i < edges.Length; i++)
-            {
-                var e = edges[i];
-                var ctrl = new List<Vector2> { Nodes[e.a] };
-                ctrl.AddRange(e.via);
-                ctrl.Add(Nodes[e.b]);
-                e.pts = Spline(ctrl.ToArray());
-                e.length = Length(e.pts);
-                e.count = Mathf.Max(0, Mathf.RoundToInt(e.length / TileSpacing) - 1);
-                edges[i] = e;
+            foreach (var e in layout.edges)
                 for (int k = 0; k < e.pts.Count; k += 2) pathPts.Add(e.pts[k]);
-            }
 
-            var kinds = BuildTerrain(root.transform, material, pathPts);
-            BuildPath(root.transform, edges);
-            Decorate(root.transform, kinds);
+            var kinds = BuildTerrain(root.transform, material, layout, pathPts);
+            BuildPath(root.transform, layout);
+            Decorate(root.transform, kinds, layout);
             SetupLightAndCamera(root.transform);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -100,44 +48,44 @@ namespace RobaColores.Map.Editor
 
         // ---------------- Camino ----------------
 
-        static void BuildPath(Transform parent, Edge[] edges)
+        static void BuildPath(Transform parent, Layout layout)
         {
             var camino = new GameObject("Camino").transform;
             camino.SetParent(parent, false);
 
             // Distancia en casillas desde INICIO (Dijkstra sobre el grafo de nodos).
             var dist = new Dictionary<string, int>();
-            foreach (var n in Nodes.Keys) dist[n] = int.MaxValue;
+            foreach (var n in layout.nodes.Keys) dist[n] = int.MaxValue;
             dist["S"] = 0;
-            for (int iter = 0; iter < Nodes.Count; iter++)
-                foreach (var e in edges)
+            for (int iter = 0; iter < layout.nodes.Count; iter++)
+                foreach (var e in layout.edges)
                 {
-                    int w = e.count + 1;
-                    if (dist[e.a] != int.MaxValue && dist[e.a] + w < dist[e.b]) dist[e.b] = dist[e.a] + w;
-                    if (dist[e.b] != int.MaxValue && dist[e.b] + w < dist[e.a]) dist[e.a] = dist[e.b] + w;
+                    if (dist[e.a] != int.MaxValue && dist[e.a] + e.weight < dist[e.b]) dist[e.b] = dist[e.a] + e.weight;
+                    if (dist[e.b] != int.MaxValue && dist[e.b] + e.weight < dist[e.a]) dist[e.a] = dist[e.b] + e.weight;
                 }
 
             var rng = new System.Random(11);
             var usage = new int[7];
             var nodeColor = new Dictionary<string, PathTileColor>();
-            foreach (var n in Nodes.Keys) nodeColor[n] = PickColor(rng, usage, -1, -1);
+            foreach (var n in layout.nodes.Keys) nodeColor[n] = PickColor(rng, usage, -1, -1);
 
             var nodeDone = new HashSet<string>();
-            foreach (var e in edges)
+            foreach (var e in layout.edges)
             {
-                if (nodeDone.Add(e.a)) PlaceTile(camino, Nodes[e.a], Tangent(e.pts, 0), nodeColor[e.a], dist[e.a], e.a);
-                if (nodeDone.Add(e.b)) PlaceTile(camino, Nodes[e.b], Tangent(e.pts, e.pts.Count - 1), nodeColor[e.b], dist[e.b], e.b);
+                if (nodeDone.Add(e.a)) PlaceTile(camino, layout.nodes[e.a], MapAGeometry.Tangent(e.pts, 0), nodeColor[e.a], dist[e.a], e.a);
+                if (nodeDone.Add(e.b)) PlaceTile(camino, layout.nodes[e.b], MapAGeometry.Tangent(e.pts, e.pts.Count - 1), nodeColor[e.b], dist[e.b], e.b);
 
                 int prev = (int)nodeColor[e.a];
-                for (int k = 1; k <= e.count; k++)
+                int interior = e.weight - 1;
+                for (int k = 1; k <= interior; k++)
                 {
-                    int next = k == e.count ? (int)nodeColor[e.b] : -1;
+                    int next = k == interior ? (int)nodeColor[e.b] : -1;
                     var color = PickColor(rng, usage, prev, next);
                     prev = (int)color;
-                    int idx = Mathf.Min(dist[e.a] + k, dist[e.b] + e.count + 1 - k);
-                    float d = k * e.length / (e.count + 1);
-                    int pi = IndexAtLength(e.pts, d);
-                    PlaceTile(camino, e.pts[pi], Tangent(e.pts, pi), color, idx, null);
+                    int idx = Mathf.Min(dist[e.a] + k, dist[e.b] + e.weight - k);
+                    float d = k * e.length / e.weight;
+                    int pi = MapAGeometry.IndexAtLength(e.pts, d);
+                    PlaceTile(camino, e.pts[pi], MapAGeometry.Tangent(e.pts, pi), color, idx, null);
                 }
             }
         }
@@ -166,60 +114,20 @@ namespace RobaColores.Map.Editor
             go.GetComponent<PathTile>().Set(color, index);
         }
 
-        static List<Vector2> Spline(Vector2[] p)
-        {
-            var res = new List<Vector2>();
-            for (int i = 0; i < p.Length - 1; i++)
-            {
-                var p0 = p[Mathf.Max(i - 1, 0)]; var p1 = p[i]; var p2 = p[i + 1]; var p3 = p[Mathf.Min(i + 2, p.Length - 1)];
-                int steps = Mathf.Max(1, Mathf.CeilToInt(Vector2.Distance(p1, p2) / 0.2f));
-                for (int s = 0; s < steps; s++)
-                {
-                    float t = (float)s / steps;
-                    res.Add(0.5f * ((2f * p1) + (-p0 + p2) * t + (2f * p0 - 5f * p1 + 4f * p2 - p3) * t * t + (-p0 + 3f * p1 - 3f * p2 + p3) * t * t * t));
-                }
-            }
-            res.Add(p[p.Length - 1]);
-            return res;
-        }
-
-        static float Length(List<Vector2> pts)
-        {
-            float l = 0;
-            for (int i = 1; i < pts.Count; i++) l += Vector2.Distance(pts[i - 1], pts[i]);
-            return l;
-        }
-
-        static int IndexAtLength(List<Vector2> pts, float d)
-        {
-            float l = 0;
-            for (int i = 1; i < pts.Count; i++)
-            {
-                l += Vector2.Distance(pts[i - 1], pts[i]);
-                if (l >= d) return i;
-            }
-            return pts.Count - 1;
-        }
-
-        static Vector2 Tangent(List<Vector2> pts, int i)
-        {
-            int a = Mathf.Max(i - 2, 0), b = Mathf.Min(i + 2, pts.Count - 1);
-            var t = pts[b] - pts[a];
-            return t.sqrMagnitude < 1e-6f ? Vector2.right : t.normalized;
-        }
-
         // ---------------- Terreno ----------------
 
-        static Kind[,] BuildTerrain(Transform parent, Material material, List<Vector2> pathPts)
+        static Kind[,] BuildTerrain(Transform parent, Material material, Layout layout, List<Vector2> pathPts)
         {
             var kinds = new Kind[Width, Depth];
             var chunks = new Dictionary<Vector2Int, VoxelMeshBuilder>();
+            var plazas = new List<Vector2>();
+            foreach (var j in Junctions) plazas.Add(layout.nodes[j]);
 
             for (int x = -1; x <= Width; x++)
                 for (int z = -1; z <= Depth; z++)
                 {
                     bool frame = x < 0 || x >= Width || z < 0 || z >= Depth;
-                    Kind k = frame ? Kind.Wood : Classify(x, z, pathPts);
+                    Kind k = frame ? Kind.Wood : Classify(x, z, pathPts, plazas);
                     if (!frame) kinds[x, z] = k;
 
                     var key = new Vector2Int(Mathf.Clamp(x, 0, Width - 1) / 16, Mathf.Clamp(z, 0, Depth - 1) / 16);
@@ -232,6 +140,7 @@ namespace RobaColores.Map.Editor
                         case Kind.Grass: b.Add(cx, 0, cz, 1, 1, 1, GrassTop, GrassSide); break;
                         case Kind.Rock: b.Add(cx, 0, cz, 1, 1, 1, Rock); break;
                         case Kind.Parchment: b.Add(cx, 0, cz, 1, 1, 1, Parchment); break;
+                        case Kind.Gold: b.Add(cx, 0, cz, 1, 1, 1, Gold); break;
                         default: b.Add(cx, 0, cz, 1, 1, 1, Planks); break;
                     }
                 }
@@ -254,25 +163,30 @@ namespace RobaColores.Map.Editor
             return kinds;
         }
 
-        static Kind Classify(int x, int z, List<Vector2> pathPts)
+        static Kind Classify(int x, int z, List<Vector2> pathPts, List<Vector2> plazas)
         {
             var c = new Vector2(x + 0.5f, z + 0.5f);
-            if (x >= 28 && x < 36 && (z < 7 || z >= 41)) return Kind.Wood;               // muelles de INICIO y META
+            if (x >= 28 && x < 36 && z >= 41) return Kind.Gold;                             // plataforma de META
+            if (x >= 26 && x < 38 && z < 8) return Kind.Wood;                               // muelle de INICIO
 
             float d = float.MaxValue;
             foreach (var p in pathPts) d = Mathf.Min(d, (p - c).sqrMagnitude);
             d = Mathf.Sqrt(d);
-            if (d <= 2f) return Kind.Sand;                                                  // cinta del camino
+            if (d <= 1.6f) return Kind.Sand;                                                // cinta del camino (3 de ancho)
+            foreach (var p in plazas) if (Vector2.Distance(p, c) <= 2.7f) return Kind.Sand; // plazas de interseccion
 
             if (x >= 3 && x <= 8 && z >= 2 && z <= 7) return Kind.Rock;                     // montanas
-            if (Vector2.Distance(c, V(21, 9.5f)) <= 3f) return Kind.Rock;                   // cueva
+            if (Vector2.Distance(c, V(10.5f, 12f)) <= 3f) return Kind.Rock;                   // cueva
             float di = Vector2.Distance(c, V(55, 6));                                        // isla palmera
             if (di <= 3.8f) return Kind.Grass;
             if (di <= 6f) return Kind.Sand;
+            float di2 = Vector2.Distance(c, V(57, 39));                                      // islote norte-este
+            if (di2 <= 2f) return Kind.Grass;
+            if (di2 <= 3.4f) return Kind.Sand;
             if (Vector2.Distance(c, V(3, 14)) <= 2.5f) return Kind.Sand;                    // X del tesoro
             if (x >= 3 && x <= 7 && z >= 41 && z <= 45) return Kind.Parchment;              // rosa de los vientos
-            if (Vector2.Distance(c, V(34, 34)) <= 1.6f) return Kind.Sand;                   // islote del ancla
-            if (d <= 3f) return Kind.Grass;
+            if (Vector2.Distance(c, V(32, 14)) <= 1.6f) return Kind.Sand;                   // islote del ancla
+            if (d <= 2.2f) return Kind.Grass;                                               // borde fino del sendero
             return Kind.Water;
         }
 
@@ -281,38 +195,79 @@ namespace RobaColores.Map.Editor
         static Transform decoRoot;
         static Kind[,] groundKinds;
 
-        static void Decorate(Transform parent, Kind[,] kinds)
+        static void Decorate(Transform parent, Kind[,] kinds, Layout layout)
         {
             groundKinds = kinds;
             decoRoot = new GameObject("Decoracion").transform;
             decoRoot.SetParent(parent, false);
 
-            // Muelles de INICIO y META
-            Place("Cartel_Inicio", 28.8f, 6.3f, 45);
-            Place("Cartel_Meta", 28.8f, 42.7f, 45);
-            Place("BanderaPirata", 35.3f, 5.8f, 0);
-            Place("Barril", 35.6f, 1.6f, 0); Place("Caja", 34.6f, 1.4f, 15); Place("Barril", 35.8f, 2.7f, 30);
-            Place("Canon", 29f, 1.6f, 90);
-            Place("PosteMuelle", 28.3f, 0.5f, 0); Place("PosteMuelle", 35.7f, 0.5f, 0);
-            Place("Calavera", 35.2f, 43.5f, 0);
-            Place("Cofre", 29.2f, 45.2f, 0);
-            Place("PosteMuelle", 28.3f, 47.5f, 0); Place("PosteMuelle", 35.7f, 47.5f, 0);
+            // INICIO: muelle de madera, arco rojo con cartel grande y banderas.
+            Place("ArcoInicio", 32f, 1.8f, 0, GroundTop);
+            Place("BanderaPirata", 27.4f, 4f, 0); Place("BanderaPirata", 36.6f, 4f, 180);
+            Place("Barril", 27.2f, 1.2f, 0); Place("Caja", 28.4f, 1.0f, 15); Place("Barril", 36.8f, 1.4f, 30); Place("Caja", 35.6f, 1.0f, 70);
+            Place("Canon", 27.6f, 6.6f, 90);
+            Place("PosteMuelle", 26.5f, 0.6f, 0); Place("PosteMuelle", 37.5f, 0.6f, 0);
+
+            // META: plataforma dorada, arco alto con cartel dorado y cofre gigante.
+            Place("ArcoMeta", 32f, 47.6f, 0, GroundTop);
+            Place("TesoroMeta", 32f, 45.6f, 0, GroundTop);
+
+            // Intersecciones: un farol por nodo, en el hueco entre los caminos que llegan.
+            foreach (var j in Junctions)
+            {
+                var p = layout.nodes[j];
+                var dirs = IncidentDirections(layout, j);
+                Vector2 best = Vector2.zero; float bestScore = -1f;
+                for (int a = 0; a < 16; a++)
+                {
+                    float ang = a * Mathf.PI * 2f / 16f;
+                    var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                    float minAng = 180f;
+                    foreach (var d in dirs) minAng = Mathf.Min(minAng, Vector2.Angle(dir, d));
+                    if (minAng > bestScore) { bestScore = minAng; best = dir; }
+                }
+                Place("Farol", p.x + best.x * 2.5f, p.y + best.y * 2.5f, 0);
+            }
+
+            // Guia direccional: una flecha por tramo, apuntando hacia META (excluye las mitades del cruce).
+            foreach (var e in layout.edges)
+            {
+                if (e.a == "X" || e.b == "X") continue;
+                int pi = MapAGeometry.IndexAtLength(e.pts, e.length * 0.5f + 1.05f);
+                var t = MapAGeometry.Tangent(e.pts, pi);
+                var side = new Vector2(-t.y, t.x);
+                var pos = e.pts[pi] + side * 1.25f;
+                // Orientacion hacia META: el nodo "b" de cada arista siempre esta mas cerca de META.
+                Place("Flecha", pos.x, pos.y, Mathf.Atan2(-t.y, t.x) * Mathf.Rad2Deg, GroundTop + 0.01f);
+            }
 
             // Escenario
             Place("RosaDeLosVientos", 5.5f, 43.5f, 0, GroundTop);
-            Animate(Place("Kraken", 17f, 27f, 0, 0.2f), 0.1f, 0.35f, 0f);
-            Animate(Place("Remolino", 21f, 21f, 0, 0.43f), 0.02f, 0.4f, 25f);
-            Animate(Place("BarcoPirata", 49f, 29f, 30, 0.25f), 0.07f, 0.3f, 0f);
-            Place("Ancla", 34f, 34f, 20);
+            Animate(Place("Kraken", 20f, 24f, 0, 0.2f), 0.1f, 0.35f, 0f);        // laguna izquierda
+            Animate(Place("BarcoPirata", 44f, 24f, 30, 0.25f), 0.07f, 0.3f, 0f); // laguna derecha
+            Animate(Place("Remolino", 32f, 34f, 0, 0.43f), 0.02f, 0.4f, 25f);    // laguna norte
+            Place("Ancla", 32f, 14f, 20);                                         // islote sur
             Place("XTesoro", 3f, 14f, 0, GroundTop);
             Place("Montana", 6f, 5f, 0);
-            Place("CuevaArco", 21f, 9.5f, 0);
+            Place("CuevaArco", 10.5f, 12f, 0);
             Place("Roca", 11.5f, 2.5f, 20, 0.3f); Place("Roca", 2.5f, 20f, 70, 0.3f);
-            Place("Roca", 44f, 15f, 40, 0.3f); Place("Roca", 26f, 36f, 10, 0.3f);
+            Place("Roca", 60f, 15f, 40, 0.3f); Place("Roca", 50f, 44f, 10, 0.3f); Place("Roca", 8f, 31f, 80, 0.3f);
 
-            // Isla de la palmera
+            // Islas de palmeras
             Place("Palmera", 56.5f, 4f, 0); Place("Palmera", 58f, 7f, 90); Place("Palmera", 53.5f, 2.5f, 180); Place("Palmera", 51f, 3f, 45);
             Place("Cofre", 55.5f, 6.5f, 30);
+            Place("Palmera", 57f, 39f, 0); Place("Barril", 56f, 40.4f, 20);
+        }
+
+        static List<Vector2> IncidentDirections(Layout layout, string node)
+        {
+            var res = new List<Vector2>();
+            foreach (var e in layout.edges)
+            {
+                if (e.a == node) res.Add((e.pts[Mathf.Min(8, e.pts.Count - 1)] - e.pts[0]).normalized);
+                else if (e.b == node) res.Add((e.pts[Mathf.Max(e.pts.Count - 9, 0)] - e.pts[e.pts.Count - 1]).normalized);
+            }
+            return res;
         }
 
         static void Animate(GameObject go, float amplitude, float speed, float spin)
