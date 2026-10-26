@@ -42,17 +42,6 @@ namespace RobaColores.Game
             "Astronomía"
         };
 
-        static readonly string[] CharacterPortraitPaths =
-        {
-            "CharacterArt/PirateCaptain",
-            "CharacterArt/SeaArcher",
-            "CharacterArt/OctopusPirate",
-            "CharacterArt/PixelPirate",
-            "CharacterArt/PirateBear",
-            "CharacterArt/OctopusCaptain",
-            "CharacterArt/PixelGrumete"
-        };
-
         sealed class Player
         {
             public PlayerSetup setup;
@@ -104,15 +93,10 @@ namespace RobaColores.Game
             var setups = LocalGameSetup.Players;
             for (var i = 0; i < setups.Length; i++)
             {
-                var characterIndex = Mathf.Clamp(setups[i].characterIndex, 0, CharacterPortraitPaths.Length - 1);
-                var portrait = Resources.Load<Texture2D>(CharacterPortraitPaths[characterIndex]);
-                if (portrait == null)
-                    Debug.LogError("No se encontró el retrato del personaje: " + CharacterPortraitPaths[characterIndex], this);
-
                 var player = new Player
                 {
                     setup = setups[i],
-                    portrait = portrait,
+                    portrait = CharacterPortraitLibrary.GetPortrait(setups[i].characterIndex),
                     tile = startTile
                 };
                 player.token = CreateToken(i, setups.Length, player.setup.characterIndex, startTile.transform.position);
@@ -680,7 +664,7 @@ namespace RobaColores.Game
             };
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                font = titleFont,
+                font = GUI.skin.button.font,
                 fontSize = 32,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = buttonTexture, textColor = Color.white },

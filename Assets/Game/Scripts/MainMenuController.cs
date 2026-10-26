@@ -26,19 +26,8 @@ namespace RobaColores.Game
             "Grumete"
         };
 
-        static readonly string[] CharacterArt =
-        {
-            "CharacterArt/PirateCaptain",
-            "CharacterArt/SeaArcher",
-            "CharacterArt/OctopusPirate",
-            "CharacterArt/PixelPirate",
-            "CharacterArt/PirateBear",
-            "CharacterArt/OctopusCaptain",
-            "CharacterArt/PixelGrumete"
-        };
-
         readonly int[] selectedCharacters = { 0, 1, 2, 3 };
-        readonly Texture2D[] portraits = new Texture2D[CharacterArt.Length];
+        readonly Texture2D[] portraits = new Texture2D[CharacterPortraitLibrary.CharacterCount];
 
         MenuPage page;
         bool customizing;
@@ -52,9 +41,13 @@ namespace RobaColores.Game
         GUIStyle headingStyle;
         GUIStyle bodyStyle;
         GUIStyle buttonStyle;
+        GUIStyle playerTabStyle;
+        GUIStyle countStyle;
         GUIStyle selectedButtonStyle;
         GUIStyle cardStyle;
         GUIStyle selectedCardStyle;
+        GUIStyle cardNameStyle;
+        GUIStyle cardCaptionStyle;
         GUIStyle paperStyle;
         Texture2D darkTexture;
         Texture2D paperTexture;
@@ -64,8 +57,8 @@ namespace RobaColores.Game
         void Awake()
         {
             titleFont = Resources.Load<Font>("Fonts/PirataOne-Regular");
-            for (var i = 0; i < CharacterArt.Length; i++)
-                portraits[i] = Resources.Load<Texture2D>(CharacterArt[i]);
+            for (var i = 0; i < CharacterPortraitLibrary.CharacterCount; i++)
+                portraits[i] = CharacterPortraitLibrary.GetPortrait(i);
 
             if (LocalGameSetup.Players.Length > 0)
             {
@@ -124,7 +117,7 @@ namespace RobaColores.Game
             };
             headingStyle = new GUIStyle(GUI.skin.label)
             {
-                font = titleFont,
+                font = titleFont != null ? titleFont : GUI.skin.label.font,
                 fontSize = 58,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color32(56, 39, 34, 255) }
@@ -138,7 +131,7 @@ namespace RobaColores.Game
             };
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                font = titleFont,
+                font = GUI.skin.button.font,
                 fontSize = 38,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = buttonTexture, textColor = Color.white },
@@ -147,6 +140,17 @@ namespace RobaColores.Game
                 border = new RectOffset(8, 8, 8, 8),
                 margin = new RectOffset(0, 0, 0, 0),
                 padding = new RectOffset(12, 12, 8, 8)
+            };
+            playerTabStyle = new GUIStyle(buttonStyle)
+            {
+                fontSize = 25,
+                wordWrap = false
+            };
+            countStyle = new GUIStyle(headingStyle)
+            {
+                font = GUI.skin.label.font,
+                fontSize = 38,
+                fontStyle = FontStyle.Bold
             };
             selectedButtonStyle = new GUIStyle(buttonStyle)
             {
@@ -161,6 +165,18 @@ namespace RobaColores.Game
             selectedCardStyle = new GUIStyle(cardStyle)
             {
                 normal = { background = selectedTexture }
+            };
+            cardNameStyle = new GUIStyle(bodyStyle)
+            {
+                fontSize = 27,
+                fontStyle = FontStyle.Bold,
+                wordWrap = false
+            };
+            cardCaptionStyle = new GUIStyle(bodyStyle)
+            {
+                fontSize = 20,
+                fontStyle = FontStyle.Bold,
+                wordWrap = false
             };
             paperStyle = new GUIStyle(GUI.skin.box)
             {
@@ -218,70 +234,86 @@ namespace RobaColores.Game
         void DrawPlayerSetup()
         {
             GUI.Box(new Rect(92, 70, 1736, 940), GUIContent.none, paperStyle);
-            GUI.Label(new Rect(180, 95, 1560, 80), customizing ? "PERSONALIZA TU TRIPULACIÓN" : "ELIGE A TU TRIPULACIÓN", headingStyle);
-            GUI.Label(new Rect(140, 180, 390, 58), "Jugadores", bodyStyle);
-
-            if (GUI.Button(new Rect(535, 188, 72, 52), "−", buttonStyle))
+            GUI.Label(new Rect(180, 91, 1560, 72), customizing ? "PERSONALIZA TU TRIPULACIÓN" : "ELIGE A TU TRIPULACIÓN", headingStyle);
+            GUI.Label(new Rect(180, 177, 240, 52), "JUGADORES", cardCaptionStyle);
+            if (GUI.Button(new Rect(420, 178, 64, 54), "−", playerTabStyle))
                 ChangePlayerCount(-1);
-            GUI.Label(new Rect(615, 183, 100, 58), playerCount.ToString(), headingStyle);
-            if (GUI.Button(new Rect(724, 188, 72, 52), "+", buttonStyle))
+            GUI.Label(new Rect(486, 177, 70, 54), playerCount.ToString(), countStyle);
+            if (GUI.Button(new Rect(558, 178, 64, 54), "+", playerTabStyle))
                 ChangePlayerCount(1);
 
+            const float tabWidth = 205f;
+            const float tabGap = 12f;
+            var tabsWidth = playerCount * tabWidth + (playerCount - 1) * tabGap;
+            var tabsX = 1690f - tabsWidth;
             for (var i = 0; i < playerCount; i++)
             {
-                var tab = new Rect(850 + i * 225, 183, 210, 58);
+                var tab = new Rect(tabsX + i * (tabWidth + tabGap), 178, tabWidth, 54);
                 var label = "JUGADOR " + (i + 1);
-                if (GUI.Button(tab, label, i == activePlayer ? selectedButtonStyle : buttonStyle))
+                if (GUI.Button(tab, label, i == activePlayer ? selectedButtonStyle : playerTabStyle))
                     activePlayer = i;
             }
 
-            GUI.Label(new Rect(130, 254, 1660, 54), "Selecciona un personaje para el Jugador " + (activePlayer + 1), bodyStyle);
+            GUI.Label(new Rect(180, 244, 1560, 54),
+                "ELIGE UN PERSONAJE PARA EL JUGADOR " + (activePlayer + 1), cardCaptionStyle);
             DrawCharacterCards();
 
             if (!string.IsNullOrEmpty(notice))
-                GUI.Label(new Rect(260, 896, 1400, 46), notice, bodyStyle);
+                GUI.Label(new Rect(515, 930, 890, 42), notice, cardCaptionStyle);
 
-            if (GUI.Button(new Rect(180, 930, 310, 72), "VOLVER", buttonStyle))
+            if (GUI.Button(new Rect(160, 932, 300, 68), "VOLVER", buttonStyle))
             {
                 notice = string.Empty;
                 page = MenuPage.Main;
             }
 
             var finishLabel = customizing ? "GUARDAR SELECCIÓN" : "COMENZAR";
-            if (GUI.Button(new Rect(1190, 930, 550, 72), finishLabel, buttonStyle))
+            if (GUI.Button(new Rect(1240, 932, 520, 68), finishLabel, buttonStyle))
                 FinishPlayerSetup();
         }
 
         void DrawCharacterCards()
         {
-            const float cardWidth = 350f;
-            const float cardHeight = 286f;
-            const float gapX = 46f;
-            const float gapY = 28f;
-            const float startX = 154f;
-            const float startY = 330f;
+            const float cardWidth = 360f;
+            const float cardHeight = 282f;
+            const float gapX = 28f;
+            const float gapY = 18f;
+            const float startY = 316f;
+            const int firstRowCount = 4;
 
             for (var i = 0; i < CharacterNames.Length; i++)
             {
-                var row = i / 4;
-                var column = i % 4;
+                var row = i / firstRowCount;
+                var column = i % firstRowCount;
+                var rowCount = row == 0 ? firstRowCount : CharacterNames.Length - firstRowCount;
+                var rowWidth = rowCount * cardWidth + (rowCount - 1) * gapX;
+                var startX = (LayoutWidth - rowWidth) * 0.5f;
                 var rect = new Rect(startX + column * (cardWidth + gapX), startY + row * (cardHeight + gapY), cardWidth, cardHeight);
                 var isSelected = selectedCharacters[activePlayer] == i;
+                var owner = GetCharacterOwner(i);
+                var unavailable = owner >= 0 && owner != activePlayer;
                 GUI.Box(rect, GUIContent.none, isSelected ? selectedCardStyle : cardStyle);
 
-                var imageRect = new Rect(rect.x + 30, rect.y + 12, rect.width - 60, 192);
+                var portraitFrame = new Rect(rect.x + 14, rect.y + 12, rect.width - 28, 174);
+                DrawRect(portraitFrame, unavailable
+                    ? new Color32(48, 54, 68, 255)
+                    : new Color32(42, 62, 76, 255));
                 var image = portraits[i];
                 if (image != null)
-                    GUI.DrawTexture(imageRect, image, ScaleMode.ScaleToFit, true);
-                else
-                    GUI.Label(imageRect, "Imagen pendiente", bodyStyle);
+                    GUI.DrawTexture(new Rect(portraitFrame.x + 3, portraitFrame.y + 3, portraitFrame.width - 6, portraitFrame.height - 6),
+                        image, ScaleMode.ScaleToFit, true);
 
-                GUI.Label(new Rect(rect.x + 12, rect.y + 202, rect.width - 24, 43), CharacterNames[i], bodyStyle);
-                var owner = GetCharacterOwner(i);
-                var caption = owner >= 0 && owner != activePlayer ? "Elegido por Jugador " + (owner + 1) : isSelected ? "SELECCIONADO" : "ELEGIR";
-                GUI.Label(new Rect(rect.x + 12, rect.y + 244, rect.width - 24, 32), caption, bodyStyle);
+                GUI.Label(new Rect(rect.x + 14, rect.y + 191, rect.width - 28, 42), CharacterNames[i], cardNameStyle);
+                var caption = unavailable ? "ELEGIDO POR JUGADOR " + (owner + 1) : isSelected ? "SELECCIONADO" : "DISPONIBLE";
+                var captionColor = unavailable
+                    ? new Color32(105, 60, 42, 255)
+                    : isSelected ? new Color32(39, 113, 78, 255) : new Color32(87, 88, 83, 255);
+                var previousColor = GUI.color;
+                GUI.color = captionColor;
+                GUI.Label(new Rect(rect.x + 14, rect.y + 234, rect.width - 28, 32), caption, cardCaptionStyle);
+                GUI.color = previousColor;
 
-                if (GUI.Button(rect, GUIContent.none, GUIStyle.none) && (owner < 0 || owner == activePlayer))
+                if (GUI.Button(rect, GUIContent.none, GUIStyle.none) && !unavailable)
                 {
                     selectedCharacters[activePlayer] = i;
                     notice = string.Empty;

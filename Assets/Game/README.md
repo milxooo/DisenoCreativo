@@ -2,7 +2,7 @@
 
 La escena `Assets/Scenes/SampleScene.unity` muestra el menú al iniciar el juego. Desde **Jugar** se configura una partida local de 2 a 4 personas, se elige un personaje distinto para cada una y se abre `Assets/Map/Scenes/MapaA.unity`.
 
-Los personajes se cargan desde `Assets/Resources/CharacterArt/` y el menú usa la fuente Pirata One incluida en `Assets/Resources/Fonts/`. La selección queda disponible en `RobaColores.Game.LocalGameSetup.Players` al cambiar a la escena del mapa.
+Los personajes se cargan desde `Assets/Resources/CharacterArt/` y el menú usa la fuente Pirata One incluida en `Assets/Resources/Fonts/`. Si falta un retrato, se muestra un icono pirata provisional y Unity registra qué recurso falta; comprueba que Git LFS haya descargado los PNG. La selección queda disponible en `RobaColores.Game.LocalGameSetup.Players` al cambiar a la escena del mapa.
 
 ## Turnos y movimiento
 

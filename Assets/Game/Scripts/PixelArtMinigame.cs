@@ -844,7 +844,7 @@ namespace RobaColores.Game
             };
             headingStyle = new GUIStyle(GUI.skin.label)
             {
-                font = Resources.Load<Font>("Fonts/PirataOne-Regular"),
+                font = GUI.skin.label.font,
                 fontSize = 28,
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true,
@@ -852,16 +852,16 @@ namespace RobaColores.Game
             };
             bodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 22,
+                fontSize = 26,
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true,
                 normal = { textColor = new Color32(56, 39, 34, 255) }
             };
-            smallStyle = new GUIStyle(bodyStyle) { fontSize = 18 };
+            smallStyle = new GUIStyle(bodyStyle) { fontSize = 22 };
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                font = Resources.Load<Font>("Fonts/PirataOne-Regular"),
-                fontSize = 22,
+                font = GUI.skin.button.font,
+                fontSize = 28,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = buttonTexture, textColor = Color.white },
                 hover = { background = selectedTexture, textColor = Color.white },
@@ -871,7 +871,7 @@ namespace RobaColores.Game
             };
             colorLabelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 19,
+                fontSize = 23,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color32(25, 25, 30, 255) }
             };
