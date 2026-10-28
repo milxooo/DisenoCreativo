@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a96952feda597f4c89d9a0bc2a35303, type: 3}
+  m_Name: GameContent
+  m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.GameContent
+  settings: {fileID: 11400000, guid: 03f87584d9c08d1469d4af7e373a6dc4, type: 2}
+  palette: {fileID: 11400000, guid: 59e6cd359c5aea34981c1af45fd92639, type: 2}
+  figures:
+  - {fileID: 11400000, guid: 123706c33e340024c936a4a9b95874a4, type: 2}
+  - {fileID: 11400000, guid: 8384fad273c6d754dab68b8cbad1a69a, type: 2}
+  - {fileID: 11400000, guid: ddcac3d7c22c2b042ac96c8e0ffcf980, type: 2}
+  - {fileID: 11400000, guid: da7c977886d635549b51c5afb3489d46, type: 2}
+  - {fileID: 11400000, guid: 394368ae516fa2c488c62d0b0b3db6b4, type: 2}
+  - {fileID: 11400000, guid: 25bd0c4d3a5e25044828992e1c405012, type: 2}
+  - {fileID: 11400000, guid: 0616bcd41583fbd47b8fff3327be30cf, type: 2}
+  - {fileID: 11400000, guid: b9856feac86ef944a9a05601c395db83, type: 2}
+  - {fileID: 11400000, guid: 6437ad34beb704e4cb73a3915bad8cc2, type: 2}
+  - {fileID: 11400000, guid: 054d603d47a270f448caa9aefd07fe7f, type: 2}
+  - {fileID: 11400000, guid: d14f66010fe374941b2a16075840db9f, type: 2}
+  - {fileID: 11400000, guid: cfc368101175db9439225d49f1a51d25, type: 2}
+  - {fileID: 11400000, guid: 24ef550b6b1c46641b41c84548c9860b, type: 2}
+  - {fileID: 11400000, guid: 786f4247d2450554792670422487f80c, type: 2}
+  characters:
+  - {fileID: 11400000, guid: 4056ed00f3d1c7e479e961dab06b9e44, type: 2}
+  - {fileID: 11400000, guid: fad0c9f0b4758994389ab738cb253a5e, type: 2}
+  - {fileID: 11400000, guid: f13f59cd208f16d46819d7971b695119, type: 2}
+  - {fileID: 11400000, guid: 68e976c0bd7305e47b6141542567911b, type: 2}
+  uiFont: {fileID: 12800000, guid: b840c058e4b482e43bac1429ea8aa736, type: 3}
+  markerPrefab: {fileID: 8567554084550935258, guid: b6ca9b64631b4eb41bc0273897b874a4, type: 3}

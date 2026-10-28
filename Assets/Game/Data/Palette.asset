@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cf0d69633ab5b1418b8f3940d4d19a4, type: 3}
+  m_Name: Palette
+  m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.PaletteAsset
+  entries:
+  - name: Rojo
+    letter: 82
+    color: {r: 0.84705883, g: 0.21176471, b: 0.22745098, a: 1}
+  - name: Naranja
+    letter: 79
+    color: {r: 0.9411765, g: 0.5411765, b: 0.14117648, a: 1}
+  - name: Amarillo
+    letter: 89
+    color: {r: 0.9490196, g: 0.827451, b: 0.20784314, a: 1}
+  - name: Verde
+    letter: 71
+    color: {r: 0.24705882, g: 0.68235296, b: 0.2901961, a: 1}
+  - name: Azul
+    letter: 66
+    color: {r: 0.23529412, g: 0.47058824, b: 0.84705883, a: 1}
+  - name: Morado
+    letter: 80
+    color: {r: 0.5568628, g: 0.30980393, b: 0.7490196, a: 1}
+  - name: Negro
+    letter: 75
+    color: {r: 0.16862746, g: 0.16862746, b: 0.2, a: 1}
+  - name: Blanco
+    letter: 87
+    color: {r: 0.95686275, g: 0.9372549, b: 0.8784314, a: 1}

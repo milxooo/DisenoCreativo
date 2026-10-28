@@ -44,6 +44,8 @@ namespace RobaColores.Map.Editor
             Decorate(root.transform, kinds, layout);
             SetupLightAndCamera(root.transform);
 
+            // El mapa tambien se guarda como prefab para reutilizarlo en la escena de partida.
+            PrefabUtility.SaveAsPrefabAssetAndConnect(root, "Assets/Map/Prefabs/MapaA.prefab", InteractionMode.AutomatedAction);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
         }

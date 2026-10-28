@@ -288,6 +288,13 @@ namespace RobaColores.Map.Editor
                 .Add(0, 0, 0, 1.2f, 0.8f, 1f, Rock)
                 .Add(0.2f, 0.8f, 0, 0.7f, 0.4f, 0.6f, Rock));
 
+            // Marcador dorado (flecha hacia abajo) para senalar las opciones de camino en las bifurcaciones.
+            Prop("Marcador", b => b
+                .Add(0, 1.2f, 0, 0.8f, 0.3f, 0.8f, Gold)
+                .Add(0, 0.9f, 0, 0.6f, 0.3f, 0.6f, Gold)
+                .Add(0, 0.6f, 0, 0.4f, 0.3f, 0.4f, Gold)
+                .Add(0, 0.3f, 0, 0.2f, 0.3f, 0.2f, Gold));
+
             // Guia direccional: flecha plana que apunta hacia +X local (hacia META cuando se orienta con el camino).
             Prop("Flecha", b => b
                 .Add(-0.15f, 0, 0, 0.6f, 0.08f, 0.2f, TileRed)
