@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using RobaColores.Game.Core;
+using RobaColores.Map;
 using static RobaColores.Map.Editor.MapAtlasGenerator;
 
 namespace RobaColores.Map.Editor
@@ -69,11 +71,13 @@ namespace RobaColores.Map.Editor
             var nodeColor = new Dictionary<string, PathTileColor>();
             foreach (var n in layout.nodes.Keys) nodeColor[n] = PickColor(rng, usage, -1, -1);
 
-            var nodeDone = new HashSet<string>();
+            var all = new List<PathTile>();
+            var nodeTiles = new Dictionary<string, PathTile>();
             foreach (var e in layout.edges)
             {
-                if (nodeDone.Add(e.a)) PlaceTile(camino, layout.nodes[e.a], MapAGeometry.Tangent(e.pts, 0), nodeColor[e.a], dist[e.a], e.a);
-                if (nodeDone.Add(e.b)) PlaceTile(camino, layout.nodes[e.b], MapAGeometry.Tangent(e.pts, e.pts.Count - 1), nodeColor[e.b], dist[e.b], e.b);
+                if (!nodeTiles.ContainsKey(e.a)) nodeTiles[e.a] = PlaceTile(camino, all, layout.nodes[e.a], MapAGeometry.Tangent(e.pts, 0), nodeColor[e.a], dist[e.a], e.a);
+                if (!nodeTiles.ContainsKey(e.b)) nodeTiles[e.b] = PlaceTile(camino, all, layout.nodes[e.b], MapAGeometry.Tangent(e.pts, e.pts.Count - 1), nodeColor[e.b], dist[e.b], e.b);
+                var chain = new List<PathTile> { nodeTiles[e.a] };
 
                 int prev = (int)nodeColor[e.a];
                 int interior = e.weight - 1;
@@ -85,9 +89,22 @@ namespace RobaColores.Map.Editor
                     int idx = Mathf.Min(dist[e.a] + k, dist[e.b] + e.weight - k);
                     float d = k * e.length / e.weight;
                     int pi = MapAGeometry.IndexAtLength(e.pts, d);
-                    PlaceTile(camino, e.pts[pi], MapAGeometry.Tangent(e.pts, pi), color, idx, null);
+                    chain.Add(PlaceTile(camino, all, e.pts[pi], MapAGeometry.Tangent(e.pts, pi), color, idx, null));
                 }
+                chain.Add(nodeTiles[e.b]);
+                for (int i = 0; i < chain.Count - 1; i++) chain[i].AddNext(chain[i + 1]);   // conexiones hacia adelante
             }
+
+            // Datos de tablero: inicio, meta y dificultad creciente con el avance.
+            int maxIndex = dist["M"];
+            foreach (var t in all)
+            {
+                float progress = (float)t.Index / maxIndex;
+                var difficulty = progress < 0.34f ? Difficulty.Facil : progress < 0.67f ? Difficulty.Intermedio : Difficulty.Dificil;
+                t.ConfigureBoard(t.TileId, t.NodeName, t == nodeTiles["S"], t == nodeTiles["M"], difficulty);
+            }
+            var board = parent.gameObject.AddComponent<MapBoard>();
+            board.SetTiles(all);
         }
 
         static PathTileColor PickColor(System.Random rng, int[] usage, int avoidA, int avoidB)
@@ -104,14 +121,18 @@ namespace RobaColores.Map.Editor
             return (PathTileColor)best;
         }
 
-        static void PlaceTile(Transform parent, Vector2 p, Vector2 tangent, PathTileColor color, int index, string nodeName)
+        static PathTile PlaceTile(Transform parent, List<PathTile> all, Vector2 p, Vector2 tangent, PathTileColor color, int index, string nodeName)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Map/Prefabs/PathTiles/Casilla_" + color + ".prefab");
             var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             go.name = "Casilla_" + index.ToString("000") + "_" + color + (nodeName != null ? "_" + nodeName : "");
             float yaw = Mathf.Atan2(-tangent.y, tangent.x) * Mathf.Rad2Deg;
             go.transform.SetPositionAndRotation(new Vector3(p.x, GroundTop, p.y), Quaternion.Euler(0, yaw, 0));
-            go.GetComponent<PathTile>().Set(color, index);
+            var tile = go.GetComponent<PathTile>();
+            tile.Set(color, index);
+            tile.ConfigureBoard(all.Count, nodeName, false, false, Difficulty.Facil);
+            all.Add(tile);
+            return tile;
         }
 
         // ---------------- Terreno ----------------
