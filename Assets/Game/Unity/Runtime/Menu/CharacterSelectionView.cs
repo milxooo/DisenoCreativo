@@ -49,29 +49,39 @@ namespace RobaColores.Game.Presentation
             content = gameContent; model = selection;
             artworkMaterial = CharacterPortraitLibrary.GetArtworkMaterial();
 
-            var title = UiKit.Label(root, "Selección de personajes", 88, TextAnchor.MiddleCenter, UiKit.Ink);
-            Abs(title.rectTransform, 100, 945, 1193, 120);
-            var hint = UiKit.Label(root, "Elijan entre dos y cuatro jugadores. Cada uno selecciona y confirma su personaje.", 28, TextAnchor.MiddleCenter, UiKit.Wood);
-            Abs(hint.rectTransform, 100, 899, 1193, 42);
+            var theater = UiKit.Panel(root, "EscenarioPirata", Color.white);
+            theater.sprite = MenuSprites.Theater();
+            theater.raycastTarget = false;
+            UiKit.Stretch(theater.rectTransform);
+            theater.transform.SetAsFirstSibling();
 
-            var countLabel = UiKit.Label(root, "JUGADORES", 27, TextAnchor.MiddleRight, UiKit.Ink);
-            Abs(countLabel.rectTransform, 470, 831, 185, 42);
+            var titleShadow = UiKit.Label(root, "ESCOGE TU TRIPULACIÓN", 58, TextAnchor.MiddleLeft, new Color32(28, 17, 18, 255));
+            Abs(titleShadow.rectTransform, 74, 962, 940, 70);
+            var title = UiKit.Label(root, "ESCOGE TU TRIPULACIÓN", 58, TextAnchor.MiddleLeft, UiKit.Gold);
+            Abs(title.rectTransform, 70, 966, 940, 70);
+            var hint = UiKit.Label(root, "Elijan entre dos y cuatro jugadores. Cada quien elige y confirma su personaje.", 25, TextAnchor.MiddleLeft, UiKit.Parchment);
+            Abs(hint.rectTransform, 76, 929, 900, 34);
+
+            var countPanel = FramePanel(root, new Color32(75, 43, 29, 255));
+            Abs(countPanel.rectTransform, 1010, 922, 328, 72);
+            var countLabel = UiKit.Label(countPanel.transform, "JUGADORES", 20, TextAnchor.MiddleCenter, UiKit.Parchment);
+            Abs(countLabel.rectTransform, 8, 41, 136, 25);
             fewerPlayers = FrameButton(root, "-", 30, () => ChangePlayerCount(-1));
-            Abs((RectTransform)fewerPlayers.transform, 670, 831, 54, 42);
-            playerCount = UiKit.Label(root, "", 32, TextAnchor.MiddleCenter, UiKit.Ink);
-            Abs(playerCount.rectTransform, 728, 831, 70, 42);
+            Abs((RectTransform)fewerPlayers.transform, 1158, 929, 48, 48);
+            playerCount = UiKit.Label(root, "", 28, TextAnchor.MiddleCenter, UiKit.Parchment);
+            Abs(playerCount.rectTransform, 1207, 929, 55, 48);
             morePlayers = FrameButton(root, "+", 30, () => ChangePlayerCount(1));
-            Abs((RectTransform)morePlayers.transform, 802, 831, 54, 42);
+            Abs((RectTransform)morePlayers.transform, 1264, 929, 48, 48);
 
             slotsRoot = UiKit.Rect(root, "EspaciosJugadores");
             UiKit.Stretch(slotsRoot);
 
-            var back = FrameButton(root, "VOLVER", 42, onBack, UiKit.ParchmentDark);
-            Abs((RectTransform)back.transform, 60, 52, 260, 76);
-            status = UiKit.Label(root, "", 34, TextAnchor.MiddleCenter, UiKit.Ink);
-            Abs(status.rectTransform, 340, 52, 700, 76);
-            startButton = FrameButton(root, "COMENZAR", 52, onStart, new Color32(0xF2, 0xC2, 0x30, 255));
-            Abs((RectTransform)startButton.transform, 1050, 40, 290, 96);
+            var back = FrameButton(root, "VOLVER", 34, onBack, new Color32(90, 50, 34, 255));
+            Abs((RectTransform)back.transform, 44, 40, 230, 72);
+            status = UiKit.Label(root, "", 26, TextAnchor.MiddleCenter, UiKit.Parchment);
+            Abs(status.rectTransform, 320, 38, 750, 72);
+            startButton = FrameButton(root, "¡A JUGAR!", 38, onStart, new Color32(0xD6, 0xA2, 0x39, 255));
+            Abs((RectTransform)startButton.transform, 1112, 36, 245, 76);
 
             RebuildSlots();
         }
@@ -88,17 +98,13 @@ namespace RobaColores.Game.Presentation
         {
             UiKit.Clear(slotsRoot);
             int count = model.SlotCount;
-            int cols = count == 3 ? 3 : 2;
-            int rows = Mathf.CeilToInt(count / (float)cols);
-            const float pw = 400f, ph = 330f, gapX = 28f, gapY = 18f;
-            float totalW = cols * pw + (cols - 1) * gapX;
-            float left = (1393f - totalW) / 2f;
-            float top = rows == 1 ? 760f : 800f;
+            const float margin = 52f, gap = 18f, height = 650f;
+            float width = (1393f - margin * 2f - gap * (count - 1)) / count;
+            float left = margin;
             slots = new SlotUi[count];
             for (int i = 0; i < count; i++)
             {
-                int col = i % cols, row = i / cols;
-                BuildSlot(slotsRoot, i, left + col * (pw + gapX), top - ph - row * (ph + gapY), pw, ph);
+                BuildSlot(slotsRoot, i, left + i * (width + gap), 182f, width, height);
             }
             Refresh();
         }
@@ -115,20 +121,27 @@ namespace RobaColores.Game.Presentation
             var root = UiKit.Rect(parent, "Jugador" + (index + 1));
             Abs(root, x, y, w, h);
 
-            ui.frame = FramePanel(root, UiKit.Parchment);
+            ui.frame = FramePanel(root, new Color32(25, 30, 45, 244));
             UiKit.Stretch(ui.frame.rectTransform);
 
-            ui.title = UiKit.Label(root, "", 32, TextAnchor.MiddleLeft, UiKit.Ink);
-            Abs(ui.title.rectTransform, 24, 284, 200, 40);
-            ui.chip = FramePanel(root, UiKit.ParchmentDark);
-            Abs(ui.chip.rectTransform, 214, 288, 166, 34);
-            ui.chipText = UiKit.Label(ui.chip.transform, "", 21, TextAnchor.MiddleCenter, UiKit.Ink);
+            var header = UiKit.Panel(root, "BanderaJugador", UiKit.Wood);
+            UiKit.Place(header.rectTransform, 0, 1, 1, 1, 10, -60, -10, -10);
+            ui.title = UiKit.Label(header.transform, "", Mathf.Clamp(Mathf.RoundToInt(w * 0.075f), 21, 32), TextAnchor.MiddleCenter, Color.white);
+            UiKit.Stretch(ui.title.rectTransform);
+            ui.chip = FramePanel(root, new Color32(67, 45, 39, 255));
+            Abs(ui.chip.rectTransform, (w - Mathf.Min(175f, w - 32f)) * 0.5f, h - 108f, Mathf.Min(175f, w - 32f), 36f);
+            ui.chipText = UiKit.Label(ui.chip.transform, "", 18, TextAnchor.MiddleCenter, UiKit.Parchment);
             UiKit.Stretch(ui.chipText.rectTransform);
 
-            ui.portraitBack = UiKit.Panel(root, "FondoRetrato", UiKit.ParchmentDark);
-            Abs(ui.portraitBack.rectTransform, 125, 130, 150, 150);
+            float artHeight = Mathf.Min(350f, h - 320f);
+            float artWidth = Mathf.Min(w - 76f, artHeight * 0.72f);
+            float artX = (w - artWidth) * 0.5f;
+            ui.portraitBack = UiKit.Panel(root, "ResplandorPersonaje", new Color(1f, 1f, 1f, 0.22f));
+            ui.portraitBack.sprite = MenuSprites.Circle();
+            ui.portraitBack.raycastTarget = false;
+            Abs(ui.portraitBack.rectTransform, artX, 194f, artWidth, artHeight);
             var pImg = UiKit.Panel(ui.portraitBack.transform, "Retrato", Color.white);
-            UiKit.Place(pImg.rectTransform, 0, 0, 1, 1, 6, 6, -6, -6);
+            UiKit.Stretch(pImg.rectTransform);
             pImg.preserveAspect = true;
             pImg.raycastTarget = false;
             ui.portrait = pImg;
@@ -143,25 +156,31 @@ namespace RobaColores.Game.Presentation
             UiKit.Stretch(ui.mark.rectTransform);
 
             int slot = index;
-            ui.prev = FrameButton(root, "<", 52, () => { model.Cycle(slot, -1); Refresh(); });
-            Abs((RectTransform)ui.prev.transform, 24, 168, 64, 76);
-            ui.next = FrameButton(root, ">", 52, () => { model.Cycle(slot, 1); Refresh(); });
-            Abs((RectTransform)ui.next.transform, 312, 168, 64, 76);
+            ui.prev = FrameButton(root, "‹", 44, () => { model.Cycle(slot, -1); Refresh(); }, new Color32(92, 54, 35, 255));
+            Abs((RectTransform)ui.prev.transform, 10, 320, 48, 58);
+            ui.next = FrameButton(root, "›", 44, () => { model.Cycle(slot, 1); Refresh(); }, new Color32(92, 54, 35, 255));
+            Abs((RectTransform)ui.next.transform, w - 58, 320, 48, 58);
 
-            ui.nameText = UiKit.Label(root, "", 36, TextAnchor.MiddleCenter, UiKit.Ink);
-            Abs(ui.nameText.rectTransform, 20, 90, 360, 40);
+            var plank = UiKit.Panel(root, "Plataforma", new Color32(109, 65, 37, 255));
+            Abs(plank.rectTransform, 24, 176, w - 48, 14);
+            var plankEdge = UiKit.Panel(root, "BordePlataforma", new Color32(205, 157, 76, 255));
+            Abs(plankEdge.rectTransform, 24, 174, w - 48, 3);
+            ui.nameText = UiKit.Label(root, "", Mathf.Clamp(Mathf.RoundToInt(w * 0.085f), 21, 36), TextAnchor.MiddleCenter, UiKit.Parchment);
+            Abs(ui.nameText.rectTransform, 16, 132, w - 32, 38);
 
             // Un cuadro de color por personaje: elegir directamente, y ver cuales estan ocupados.
             int count = content.characters.Count;
-            float step = Mathf.Min(40f, 340f / Mathf.Max(1, count));
-            float swW = step - 8f;
-            float sx = (w - (count * step - 8f)) / 2f;
+            float step = Mathf.Min(36f, (w - 24f) / Mathf.Max(1, count));
+            float swW = Mathf.Max(20f, step - 5f);
+            float sx = (w - (count * step - 5f)) / 2f;
             ui.swatchBorders = new Image[count]; ui.swatchFills = new Image[count]; ui.swatchButtons = new Button[count];
             for (int j = 0; j < count; j++)
             {
                 int character = j;
                 var border = UiKit.Panel(root, "Ficha" + j, UiKit.Ink);
-                Abs(border.rectTransform, sx + j * step, 60, swW, swW);
+                border.sprite = MenuSprites.Frame();
+                border.type = Image.Type.Sliced;
+                Abs(border.rectTransform, sx + j * step, 76, swW, swW);
                 var fill = UiKit.Panel(border.transform, "Color", content.characters[j].mainColor);
                 UiKit.Place(fill.rectTransform, 0, 0, 1, 1, 3, 3, -3, -3);
                 fill.raycastTarget = false;
@@ -177,7 +196,7 @@ namespace RobaColores.Game.Presentation
                 if (model.Slot(slot).State == SlotState.Confirmed) model.Unconfirm(slot); else model.Confirm(slot);
                 Refresh();
             }, new Color32(0xF2, 0xC2, 0x30, 255));
-            Abs((RectTransform)ui.confirm.transform, 70, 8, 260, 46);
+            Abs((RectTransform)ui.confirm.transform, 24, 14, w - 48, 48);
         }
 
         // Vuelve a pintar todo desde el modelo: la interfaz nunca guarda su propio estado.
@@ -195,15 +214,17 @@ namespace RobaColores.Game.Presentation
                 bool confirmed = s.State == SlotState.Confirmed;
 
                 ui.title.text = "JUGADOR " + s.Number;
-                ui.frame.color = confirmed ? new Color(0.80f, 0.92f, 0.72f) : UiKit.Parchment;
+                ui.frame.color = confirmed ? new Color32(42, 69, 51, 248) : new Color32(25, 30, 45, 244);
                 switch (s.State)
                 {
                     case SlotState.Pending: ui.chipText.text = "PENDIENTE"; ui.chip.color = new Color(0.72f, 0.68f, 0.58f); break;
-                    case SlotState.Selected: ui.chipText.text = "SELECCIONADO"; ui.chip.color = new Color32(0xF2, 0xC2, 0x30, 255); break;
-                    default: ui.chipText.text = "CONFIRMADO"; ui.chip.color = new Color32(0x6F, 0xB5, 0x5E, 255); break;
+                    case SlotState.Selected: ui.chipText.text = "SELECCIONADO"; ui.chip.color = new Color32(0xD6, 0xA2, 0x39, 255); break;
+                    default: ui.chipText.text = "CONFIRMADO"; ui.chip.color = new Color32(0x45, 0x87, 0x53, 255); break;
                 }
 
-                ui.portraitBack.color = has ? Color.Lerp(ch.mainColor, UiKit.Parchment, 0.45f) : UiKit.ParchmentDark;
+                ui.portraitBack.color = has
+                    ? new Color(ch.mainColor.r, ch.mainColor.g, ch.mainColor.b, 0.26f)
+                    : new Color(0.7f, 0.6f, 0.4f, 0.1f);
                 var art = has ? CharacterPortraitLibrary.GetCharacterArtwork(s.CharacterId) : null;
                 ui.artwork.texture = art;
                 bool showArtwork = art != null && artworkMaterial != null;
@@ -217,6 +238,7 @@ namespace RobaColores.Game.Presentation
                     ui.mark.text = has ? (string.IsNullOrEmpty(ch.displayName) ? "?" : ch.displayName.Substring(0, 1)) : "?";
                 }
                 ui.nameText.text = has ? ch.displayName : "Elige un personaje";
+                ui.nameText.color = has ? UiKit.Parchment : new Color32(191, 176, 142, 255);
 
                 ui.prev.interactable = !confirmed;
                 ui.next.interactable = !confirmed;
@@ -226,7 +248,7 @@ namespace RobaColores.Game.Presentation
                     var fill = content.characters[j].mainColor;
                     fill.a = available ? 1f : 0.22f;
                     ui.swatchFills[j].color = fill;
-                    ui.swatchBorders[j].color = j == s.CharacterId ? new Color32(0xF2, 0xC2, 0x30, 255) : UiKit.Ink;
+                    ui.swatchBorders[j].color = j == s.CharacterId ? UiKit.Gold : new Color32(20, 18, 20, 255);
                     ui.swatchButtons[j].interactable = !confirmed && available;
                 }
 
@@ -240,7 +262,7 @@ namespace RobaColores.Game.Presentation
             if (canStart)
             {
                 status.text = "Todos los jugadores listos";
-                status.color = new Color32(0x2F, 0x6E, 0x2A, 255);
+                status.color = new Color32(0xB8, 0xDC, 0xA0, 255);
             }
             else
             {
@@ -252,7 +274,7 @@ namespace RobaColores.Game.Presentation
                     status.text = "Falta confirmar: jugador " + string.Join(", ", names.ToArray());
                 }
                 else status.text = problems[0];
-                status.color = new Color32(0x9C, 0x2B, 0x2B, 255);
+                status.color = new Color32(0xF0, 0xA0, 0x78, 255);
             }
         }
     }

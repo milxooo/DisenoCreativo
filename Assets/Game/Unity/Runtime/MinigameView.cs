@@ -51,55 +51,60 @@ namespace RobaColores.Game.Presentation
             var round = s.Round;
             root = (RectTransform)transform;
             UiKit.Stretch(root);
-            var bg = UiKit.Panel(root, "Fondo", UiKit.Dim);
+            var bg = UiKit.Panel(root, "Fondo", new Color(0.025f, 0.06f, 0.11f, 0.68f));
             UiKit.Stretch(bg.rectTransform);
 
-            // Cabecera: referencia, categoria, temporizador global y ayuda.
-            var refBox = UiKit.Panel(root, "Referencia", UiKit.ParchmentDark);
-            UiKit.Place(refBox.rectTransform, 0, 1, 0, 1, 20, -295, 300, -25);
-            var refTitle = UiKit.Label(refBox.transform, "REFERENCIA", 18, TextAnchor.MiddleCenter, UiKit.Ink);
-            UiKit.Place(refTitle.rectTransform, 0, 1, 1, 1, 0, -24, 0, 0);
+            var header = MenuWidgets.FramePanel(root, new Color32(65, 42, 31, 246));
+            UiKit.Place(header.rectTransform, 0, 1, 1, 1, 0, -105, 0, 0);
+
+            var refBox = MenuWidgets.FramePanel(root, UiKit.Parchment);
+            UiKit.Place(refBox.rectTransform, 0, 1, 0, 1, 18, -324, 326, -16);
+            var refTitle = UiKit.Label(refBox.transform, "MAPA DEL DESAFÍO", 18, TextAnchor.MiddleCenter, UiKit.Ink);
+            UiKit.Place(refTitle.rectTransform, 0, 1, 1, 1, 4, -30, -4, -4);
             var refGrid = UiKit.Rect(refBox.transform, "Cuadricula");
-            UiKit.Place(refGrid, 0, 0, 1, 1, 10, 8, -10, -28);
+            UiKit.Place(refGrid, 0, 0, 1, 1, 12, 12, -12, -38);
             refArea = refGrid;
             var refCells = BuildGrid(refGrid, round.Figure.Width, round.Figure.Height, null, out refLayout);
             for (int y = 0; y < round.Figure.Height; y++)
                 for (int x = 0; x < round.Figure.Width; x++)
                     refCells[y * round.Figure.Width + x].color = CellColor(round.Figure.CellAt(x, y));
 
-            var cat = UiKit.Label(root, "Categoría: " + GameText.CategoryName(round.Category), 32, TextAnchor.MiddleLeft, UiKit.Gold);
-            UiKit.Place(cat.rectTransform, 0, 1, 0, 1, 320, -70, 980, -22);
-            timerText = UiKit.Label(root, "", 70, TextAnchor.MiddleLeft, UiKit.Parchment);
-            UiKit.Place(timerText.rectTransform, 0, 1, 0, 1, 320, -170, 530, -80);
-            var simultaneous = UiKit.Label(root, "MINIJUEGO SIMULTÁNEO · TODOS JUEGAN A LA VEZ", 22, TextAnchor.MiddleRight, UiKit.Gold);
-            UiKit.Place(simultaneous.rectTransform, 0, 1, 1, 1, 990, -78, -24, -28);
-            var hint = UiKit.Label(root, "Clic izquierdo: pintar con el color elegido. Clic derecho (o la X): borrar.\nCualquier jugador puede pulsar TERMINAR: el desafío acaba para todos.", 17, TextAnchor.UpperLeft, UiKit.Parchment);
-            UiKit.Place(hint.rectTransform, 1, 1, 1, 1, -420, -190, -20, -85);
+            var eyebrow = UiKit.Label(root, "DESAFÍO DE PIXEL ART", 18, TextAnchor.MiddleLeft, new Color32(232, 192, 111, 255));
+            UiKit.Place(eyebrow.rectTransform, 0, 1, 0, 1, 354, -34, 520, -8);
+            var cat = UiKit.Label(root, GameText.CategoryName(round.Category), 34, TextAnchor.MiddleLeft, UiKit.Parchment);
+            UiKit.Place(cat.rectTransform, 0, 1, 0, 1, 354, -82, 560, -34);
+            timerText = UiKit.Label(root, "", 52, TextAnchor.MiddleCenter, UiKit.Parchment);
+            UiKit.Place(timerText.rectTransform, 0.72f, 1, 0.86f, 1, 0, -92, 0, -16);
+            var simultaneous = UiKit.Label(root, "TODOS JUEGAN A LA VEZ", 20, TextAnchor.MiddleCenter, UiKit.Gold);
+            UiKit.Place(simultaneous.rectTransform, 0.85f, 1, 1, 1, 0, -72, -18, -24);
+            var hint = UiKit.Label(root, "Clic izquierdo: pintar · clic derecho o X: borrar\nCualquier jugador puede terminar el desafío.", 16, TextAnchor.MiddleLeft, UiKit.Parchment);
+            UiKit.Place(hint.rectTransform, 0.52f, 1, 0.86f, 1, 0, -156, 0, -108);
 
             // Un panel por participante, repartidos en el ancho.
             var ids = new List<int>(round.ParticipantIds);
             ids.Sort();
             int n = ids.Count;
             for (int i = 0; i < n; i++)
-                BuildPanel(ids[i], (float)i / n, (float)(i + 1) / n, names[ids[i]], colors[ids[i]], n >= 5);
+                BuildPanel(ids[i], (float)i / n, (float)(i + 1) / n, names[ids[i]], colors[ids[i]], n >= 4);
         }
 
         void BuildPanel(int playerId, float ax0, float ax1, string playerName, Color playerColor, bool compact)
         {
             var round = session.Round;
             var p = new PlayerPanel { playerId = playerId, width = round.Figure.Width, height = round.Figure.Height, selected = 0 };
-            var panel = UiKit.Panel(root, "Jugador" + playerId, new Color(UiKit.Wood.r, UiKit.Wood.g, UiKit.Wood.b, 0.95f));
-            UiKit.Place(panel.rectTransform, ax0, 0.02f, ax1, 0.7f, 10, 0, -10, 0);
+            var panel = MenuWidgets.FramePanel(root, new Color32(58, 39, 31, 250));
+            panel.name = "Jugador" + playerId;
+            UiKit.Place(panel.rectTransform, ax0, 0.015f, ax1, 0.54f, 8, 0, -8, 0);
 
-            var header = UiKit.Panel(panel.transform, "Cabecera", playerColor);
-            UiKit.Place(header.rectTransform, 0, 1, 1, 1, 0, -40, 0, 0);
-            var title = UiKit.Label(header.transform, playerName, compact ? 20 : 26, TextAnchor.MiddleCenter, Color.white);
+            var header = MenuWidgets.FramePanel(panel.transform, playerColor);
+            UiKit.Place(header.rectTransform, 0, 1, 1, 1, 10, -49, -10, -8);
+            var title = UiKit.Label(header.transform, playerName, compact ? 19 : 26, TextAnchor.MiddleCenter, Color.white);
             UiKit.Stretch(title.rectTransform);
 
-            var gridArea = UiKit.Panel(panel.transform, "AreaCuadricula", new Color(0, 0, 0, 0.25f));
-            UiKit.Place(gridArea.rectTransform, 0, 0, 1, 1, 8, 128, -8, -48);
+            var gridArea = MenuWidgets.FramePanel(panel.transform, UiKit.ParchmentDark);
+            UiKit.Place(gridArea.rectTransform, 0, 0, 1, 1, 14, 116, -14, -58);
             var grid = UiKit.Rect(gridArea.transform, "Cuadricula");
-            UiKit.Stretch(grid);
+            UiKit.Place(grid, 0, 0, 1, 1, 10, 10, -10, -10);
             p.gridArea = grid;
             p.cells = BuildGrid(grid, p.width, p.height, (cx, cy, paint) => OnCell(p, cx, cy, paint), out p.gridLayout);
 
@@ -109,19 +114,19 @@ namespace RobaColores.Game.Presentation
             // Paleta (con unidades disponibles del inventario) + goma.
             int colorCount = content.palette.Count;
             var paletteRow = UiKit.Rect(panel.transform, "Paleta");
-            UiKit.Place(paletteRow, 0, 0, 1, 0, 8, 66, -8, 120);
+            UiKit.Place(paletteRow, 0, 0, 1, 0, 12, 62, -12, 112);
             p.counts = new Text[colorCount];
             p.frames = new GameObject[colorCount + 1];
             for (int c = 0; c <= colorCount; c++)
             {
                 int index = c < colorCount ? c : -1;
                 float f0 = (float)c / (colorCount + 1), f1 = (float)(c + 1) / (colorCount + 1);
-                var frame = UiKit.Panel(paletteRow, "Marco", UiKit.Gold);
+                var frame = MenuWidgets.FramePanel(paletteRow, UiKit.Gold);
                 UiKit.Place(frame.rectTransform, f0, 0, f1, 1, 0, 0, 0, 0);
                 frame.gameObject.SetActive(index == p.selected);
                 p.frames[c] = frame.gameObject;
                 var color = index >= 0 ? content.palette.entries[index].color : UiKit.ParchmentDark;
-                var btn = UiKit.MakeButton(paletteRow, index >= 0 ? "" : "X", color, 22, () => Select(p, index));
+                var btn = MenuWidgets.FrameButton(paletteRow, index >= 0 ? "" : "X", compact ? 18 : 22, () => Select(p, index), color);
                 UiKit.Place((RectTransform)btn.transform, f0, 0, f1, 1, 3, 3, -3, -3);
                 if (index >= 0)
                 {
@@ -132,9 +137,8 @@ namespace RobaColores.Game.Presentation
                 else btn.GetComponentInChildren<Text>().color = UiKit.Ink;
             }
 
-            p.finish = UiKit.MakeButton(panel.transform, "TERMINAR", UiKit.Wood, compact ? 20 : 26, () => onFinishPressed(playerId));
-            UiKit.Place((RectTransform)p.finish.transform, 0, 0, 1, 0, 8, 12, -8, 56);
-            p.finish.GetComponent<Image>().color = new Color32(0x9C, 0x2B, 0x2B, 255);
+            p.finish = MenuWidgets.FrameButton(panel.transform, "TERMINAR", compact ? 18 : 24, () => onFinishPressed(playerId), new Color32(0x9C, 0x2B, 0x2B, 255));
+            UiKit.Place((RectTransform)p.finish.transform, 0, 0, 1, 0, 14, 10, -14, 52);
 
             panels.Add(p);
             RefreshCounts(p);
@@ -144,7 +148,7 @@ namespace RobaColores.Game.Presentation
         {
             layout = parent.gameObject.AddComponent<GridLayoutGroup>();
             layout.cellSize = new Vector2(20, 20);
-            layout.spacing = new Vector2(1f, 1f);
+            layout.spacing = new Vector2(2f, 2f);
             layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             layout.constraintCount = w;
             layout.childAlignment = TextAnchor.MiddleCenter;
@@ -168,7 +172,9 @@ namespace RobaColores.Game.Presentation
         void Fit(GridLayoutGroup layout, RectTransform area, int w, int h)
         {
             var r = area.rect;
-            float cell = Mathf.Floor(Mathf.Min((r.width - w) / w, (r.height - h) / h));
+            float cell = Mathf.Floor(Mathf.Min(
+                (r.width - (w - 1) * layout.spacing.x) / w,
+                (r.height - (h - 1) * layout.spacing.y) / h));
             if (cell < 4f) cell = 4f;
             layout.cellSize = new Vector2(cell, cell);
         }
