@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53c46a4617fc4d14eb545724128ae028, type: 3}
+  m_Name: Pirata_Naranja
+  m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.CharacterAsset
+  id: pirata_naranja
+  displayName: Pirata Naranja
+  description: Personaje provisional. Se sustituye por el definitivo en este mismo
+    asset.
+  mainColor: {r: 0.9411765, g: 0.5411765, b: 0.14117648, a: 1}
+  portrait: {fileID: 21300000, guid: 5723d09765dddc246b5b0c965b6a4728, type: 3}
+  pawnPrefab: {fileID: 8779940786436252764, guid: 808bcdf71ebe45f46b3829c87d37492b, type: 3}
+  extraMaterials: []

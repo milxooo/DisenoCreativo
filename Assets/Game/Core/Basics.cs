@@ -34,7 +34,9 @@ namespace RobaColores.Game.Core
     public sealed class GameConfig
     {
         public int MinPlayers = 2;
-        public int MaxPlayers = 4;
+        public int MaxPlayers = 6;
+        // Provisional: si es false, cada jugador debe tener un personaje distinto. Regla configurable (aun sin decidir).
+        public bool AllowRepeatedCharacters = false;
         public int InitialUnitsPerColor = 200;
         public float MinigameSeconds = 90f;
         // PENDIENTE de confirmar: segundos que la cuadricula del jugador queda bloqueada al inicio del siguiente minijuego.

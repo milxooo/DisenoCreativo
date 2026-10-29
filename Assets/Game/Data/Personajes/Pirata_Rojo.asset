@@ -12,6 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53c46a4617fc4d14eb545724128ae028, type: 3}
   m_Name: Pirata_Rojo
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.CharacterAsset
+  id: pirata_rojo
   displayName: Pirata Rojo
+  description: Personaje provisional. Se sustituye por el definitivo en este mismo
+    asset.
   mainColor: {r: 0.84705883, g: 0.21176471, b: 0.22745098, a: 1}
+  portrait: {fileID: 21300000, guid: 19f27110e8826544f99e1f101ce6a93e, type: 3}
   pawnPrefab: {fileID: 1431738034814766772, guid: 095b44a5f60f4fe4ea92d46808a34cd6, type: 3}
+  extraMaterials: []

@@ -21,13 +21,18 @@ namespace RobaColores.Game.Presentation
 
         public static Canvas CreateCanvas(string name, int sortingOrder)
         {
+            return CreateCanvas(name, sortingOrder, new Vector2(1280, 720));
+        }
+
+        public static Canvas CreateCanvas(string name, int sortingOrder, Vector2 referenceResolution)
+        {
             var go = new GameObject(name);
             var canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = sortingOrder;
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.referenceResolution = referenceResolution;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
             go.AddComponent<GraphicRaycaster>();

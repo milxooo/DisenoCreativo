@@ -16,8 +16,10 @@ namespace RobaColores.Game.Presentation
     [CreateAssetMenu(menuName = "Roba Colores/Ajustes de partida", fileName = "GameSettings")]
     public class GameSettingsAsset : ScriptableObject
     {
-        public int minPlayers = 2;
-        public int maxPlayers = 4;
+        public int minPlayers = 6;
+        public int maxPlayers = 6;
+        [Tooltip("PROVISIONAL: si es false, cada jugador debe elegir un personaje distinto. Regla aun sin decidir.")]
+        public bool allowRepeatedCharacters;
         public int initialUnitsPerColor = 200;
         public float minigameSeconds = 90f;
         [Tooltip("PENDIENTE de confirmar: segundos de bloqueo al inicio del siguiente minijuego tras sacar la cara 6.")]
@@ -33,6 +35,7 @@ namespace RobaColores.Game.Presentation
             {
                 MinPlayers = minPlayers,
                 MaxPlayers = maxPlayers,
+                AllowRepeatedCharacters = allowRepeatedCharacters,
                 InitialUnitsPerColor = initialUnitsPerColor,
                 MinigameSeconds = minigameSeconds,
                 TimePenaltySeconds = timePenaltySeconds,

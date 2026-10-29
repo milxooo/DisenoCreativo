@@ -14,6 +14,7 @@ namespace RobaColores.Game.Presentation
         public List<CharacterAsset> characters = new List<CharacterAsset>();
         public Font uiFont;
         public GameObject markerPrefab;   // marcador dorado para las opciones de camino
+        public MenuArt menuArt;           // imagenes del menu principal (provisionales)
 
         public FigureCatalog BuildCatalog()
         {

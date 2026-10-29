@@ -34,5 +34,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fad0c9f0b4758994389ab738cb253a5e, type: 2}
   - {fileID: 11400000, guid: f13f59cd208f16d46819d7971b695119, type: 2}
   - {fileID: 11400000, guid: 68e976c0bd7305e47b6141542567911b, type: 2}
+  - {fileID: 11400000, guid: 2bb7742d31014a2409e71522aedf9c85, type: 2}
+  - {fileID: 11400000, guid: 28e3b5d5aca364c46b7b13d3ca0f27a4, type: 2}
   uiFont: {fileID: 12800000, guid: b840c058e4b482e43bac1429ea8aa736, type: 3}
   markerPrefab: {fileID: 8567554084550935258, guid: b6ca9b64631b4eb41bc0273897b874a4, type: 3}
+  menuArt: {fileID: 11400000, guid: 9333ae922af0be040a65ce5479ce2089, type: 2}

@@ -79,10 +79,10 @@ namespace RobaColores.Game.Presentation
             ids.Sort();
             int n = ids.Count;
             for (int i = 0; i < n; i++)
-                BuildPanel(ids[i], (float)i / n, (float)(i + 1) / n, names[ids[i]], colors[ids[i]]);
+                BuildPanel(ids[i], (float)i / n, (float)(i + 1) / n, names[ids[i]], colors[ids[i]], n >= 5);
         }
 
-        void BuildPanel(int playerId, float ax0, float ax1, string playerName, Color playerColor)
+        void BuildPanel(int playerId, float ax0, float ax1, string playerName, Color playerColor, bool compact)
         {
             var round = session.Round;
             var p = new PlayerPanel { playerId = playerId, width = round.Figure.Width, height = round.Figure.Height, selected = 0 };
@@ -91,7 +91,7 @@ namespace RobaColores.Game.Presentation
 
             var header = UiKit.Panel(panel.transform, "Cabecera", playerColor);
             UiKit.Place(header.rectTransform, 0, 1, 1, 1, 0, -40, 0, 0);
-            var title = UiKit.Label(header.transform, playerName, 26, TextAnchor.MiddleCenter, Color.white);
+            var title = UiKit.Label(header.transform, playerName, compact ? 20 : 26, TextAnchor.MiddleCenter, Color.white);
             UiKit.Stretch(title.rectTransform);
 
             var gridArea = UiKit.Panel(panel.transform, "AreaCuadricula", new Color(0, 0, 0, 0.25f));
@@ -123,14 +123,14 @@ namespace RobaColores.Game.Presentation
                 UiKit.Place((RectTransform)btn.transform, f0, 0, f1, 1, 3, 3, -3, -3);
                 if (index >= 0)
                 {
-                    var count = UiKit.Label(btn.transform, "", 13, TextAnchor.LowerCenter, ContrastText(color));
+                    var count = UiKit.Label(btn.transform, "", compact ? 10 : 13, TextAnchor.LowerCenter, ContrastText(color));
                     UiKit.Stretch(count.rectTransform);
                     p.counts[index] = count;
                 }
                 else btn.GetComponentInChildren<Text>().color = UiKit.Ink;
             }
 
-            p.finish = UiKit.MakeButton(panel.transform, "TERMINAR", UiKit.Wood, 26, () => onFinishPressed(playerId));
+            p.finish = UiKit.MakeButton(panel.transform, "TERMINAR", UiKit.Wood, compact ? 20 : 26, () => onFinishPressed(playerId));
             UiKit.Place((RectTransform)p.finish.transform, 0, 0, 1, 0, 8, 12, -8, 56);
             p.finish.GetComponent<Image>().color = new Color32(0x9C, 0x2B, 0x2B, 255);
 

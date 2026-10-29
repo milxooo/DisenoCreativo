@@ -28,6 +28,7 @@ namespace RobaColores.Game.Presentation
 
         readonly List<string> names = new List<string>();
         readonly List<Color> colors = new List<Color>();
+        readonly List<string> characterNames = new List<string>();
         readonly Dictionary<int, Transform> pawns = new Dictionary<int, Transform>();
         readonly Queue<GameEvent> moves = new Queue<GameEvent>();
         readonly List<string> log = new List<string>();
@@ -64,16 +65,22 @@ namespace RobaColores.Game.Presentation
         void Start()
         {
             if (!enabled) return;
-            var chosen = SessionSetup.HasSelection ? SessionSetup.CharacterIndices : new List<int> { 0, 1 };
-            session = new GameSession(content.BuildConfig(), board.BuildGraph(), content.BuildCatalog(), new SystemRandomSource());
+            // Los jugadores vienen del menu (seleccion confirmada). Si la escena se abre sola, se usan los primeros personajes.
+            var setup = new List<PlayerSetup>(SessionSetup.Players);
+            if (setup.Count == 0)
+                for (int i = 0; i < content.settings.maxPlayers; i++) setup.Add(new PlayerSetup { number = i + 1, characterIndex = i % content.characters.Count, name = "Jugador " + (i + 1) });
+            var config = content.BuildConfig();
+            if (!SessionSetup.HasSelection) config.AllowRepeatedCharacters = true;   // solo para pruebas sin menu
+            session = new GameSession(config, board.BuildGraph(), content.BuildCatalog(), new SystemRandomSource());
             session.Event += OnEvent;
-            for (int i = 0; i < chosen.Count; i++)
+            for (int i = 0; i < setup.Count; i++)
             {
-                string playerName = SessionSetup.HasSelection && i < SessionSetup.Names.Count ? SessionSetup.Names[i] : "Jugador " + (i + 1);
-                var character = content.characters[chosen[i]];
-                session.AddPlayer(playerName, chosen[i]);
+                string playerName = setup[i].name;
+                var character = content.characters[setup[i].characterIndex];
+                session.AddPlayer(playerName, setup[i].characterIndex);
                 names.Add(playerName);
                 colors.Add(character.mainColor);
+                characterNames.Add(character.displayName);
                 var pawn = Instantiate(character.pawnPrefab).transform;
                 pawn.name = "Peon_" + playerName;
                 pawn.localScale = Vector3.one * 1.6f;   // legible a la escala del mapa
@@ -211,7 +218,7 @@ namespace RobaColores.Game.Presentation
 
         Vector3 PawnPosition(int playerId, int tileId)
         {
-            var offset = new Vector3(playerId % 2 == 0 ? -0.3f : 0.3f, 0f, playerId < 2 ? -0.25f : 0.25f);
+            var offset = new Vector3((playerId % 3 - 1) * 0.5f, 0f, (playerId / 3 - 0.5f) * 0.55f);   // hasta 6 peones en la misma casilla
             return board.PositionOf(tileId) + offset;
         }
 
@@ -291,7 +298,7 @@ namespace RobaColores.Game.Presentation
                 string hex = ColorUtility.ToHtmlStringRGB(colors[p.Id]);
                 bool current = session.Phase != GamePhase.GameOver && session.CurrentPlayer != null && session.CurrentPlayer.Id == p.Id;
                 string status = p.Disqualified ? " DESCALIFICADO" : p.SkipNextTurn ? " (pierde turno)" : p.PendingTimePenalty > 0f ? " (penalización)" : "";
-                sb.AppendLine((current ? "> " : "   ") + "<color=#" + hex + ">" + p.Name + "</color>  " + p.Inventory.Total + " u." + status);
+                sb.AppendLine((current ? "> " : "   ") + "<color=#" + hex + ">" + p.Name + "</color> " + characterNames[p.Id] + "  " + p.Inventory.Total + " u." + status);
             }
             playersText.text = sb.ToString();
             logText.text = string.Join("\n", log.ToArray()) + (lastRoll.Length > 0 && session.Phase == GamePhase.AwaitingMoveRoll ? "" : "");
@@ -344,7 +351,8 @@ namespace RobaColores.Game.Presentation
 
         void ShowOrder()
         {
-            var box = Modal("Orden de turnos", 640, 420);
+            var box = Modal("Orden de turnos", 900, 640);
+            // Izquierda: las tiradas del dado de orden (con los desempates); derecha: el orden final.
             var sb = new StringBuilder();
             var rounds = session.OrderResult.Rounds;
             for (int r = 0; r < rounds.Count; r++)
@@ -352,11 +360,12 @@ namespace RobaColores.Game.Presentation
                 sb.AppendLine(r == 0 ? "Tirada inicial:" : "Desempate:");
                 foreach (var kv in rounds[r]) sb.AppendLine("   " + names[kv.Key] + ": " + kv.Value);
             }
-            sb.AppendLine();
-            sb.AppendLine("Orden:");
-            for (int i = 0; i < session.TurnOrder.Count; i++) sb.AppendLine("   " + (i + 1) + ". " + names[session.TurnOrder[i]]);
-            var text = UiKit.Label(box, sb.ToString(), 24, TextAnchor.UpperLeft, UiKit.Ink);
-            UiKit.Place(text.rectTransform, 0, 0, 1, 1, 24, 80, -24, -70);
+            var left = UiKit.Label(box, sb.ToString(), 22, TextAnchor.UpperLeft, UiKit.Ink);
+            UiKit.Place(left.rectTransform, 0, 0, 0.5f, 1, 28, 90, -10, -70);
+            var order = new StringBuilder("Orden de juego:\n");
+            for (int i = 0; i < session.TurnOrder.Count; i++) order.AppendLine("   " + (i + 1) + ". " + names[session.TurnOrder[i]] + " (" + characterNames[session.TurnOrder[i]] + ")");
+            var text = UiKit.Label(box, order.ToString(), 24, TextAnchor.UpperLeft, UiKit.Ink);
+            UiKit.Place(text.rectTransform, 0.5f, 0, 1, 1, 10, 90, -24, -70);
             var go = UiKit.MakeButton(box, "COMENZAR", UiKit.WoodLight, 28, () => { orderPending = false; Refresh(); });
             UiKit.Place((RectTransform)go.transform, 0.5f, 0, 0.5f, 0, -110, 16, 110, 64);
         }

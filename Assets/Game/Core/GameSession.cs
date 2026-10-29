@@ -82,7 +82,8 @@ namespace RobaColores.Game.Core
         {
             Require(Phase == GamePhase.Setup, "Solo se pueden anadir jugadores antes de empezar.");
             if (players.Count >= Config.MaxPlayers) throw new InvalidOperationException("Maximo de jugadores alcanzado.");
-            foreach (var p in players) if (p.CharacterId == characterId) throw new InvalidOperationException("Personaje ya elegido.");
+            if (!Config.AllowRepeatedCharacters)
+                foreach (var p in players) if (p.CharacterId == characterId) throw new InvalidOperationException("Personaje ya elegido.");
             var player = new PlayerState
             {
                 Id = players.Count,

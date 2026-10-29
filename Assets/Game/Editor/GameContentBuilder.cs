@@ -70,6 +70,7 @@ namespace RobaColores.Game.EditorTools
             EditorUtility.SetDirty(palette);
 
             var settings = Load<GameSettingsAsset>(Root + "/GameSettings.asset");
+            settings.minPlayers = 6; settings.maxPlayers = 6; settings.allowRepeatedCharacters = false;
             settings.moveDieFaces = new List<MoveFaceData>
             {
                 new MoveFaceData { kind = MoveFaceKind.Advance, steps = 1 }, new MoveFaceData { kind = MoveFaceKind.Advance, steps = 2 },
@@ -99,15 +100,25 @@ namespace RobaColores.Game.EditorTools
                 new Pawn { name = "Pirata Azul", color = Hex("3C78D8"), cell = TileBlue },
                 new Pawn { name = "Pirata Verde", color = Hex("3FAE4A"), cell = TileGreen },
                 new Pawn { name = "Pirata Morado", color = Hex("8E4FBF"), cell = TilePurple },
+                new Pawn { name = "Pirata Naranja", color = Hex("F08A24"), cell = TileOrange },
+                new Pawn { name = "Pirata Amarillo", color = Hex("F2D335"), cell = TileYellow },
             };
             content.characters = new List<CharacterAsset>();
-            foreach (var p in pawns)
+            for (int i = 0; i < pawns.Length; i++)
             {
-                var c = Load<CharacterAsset>(Root + "/Personajes/" + p.name.Replace(" ", "_") + ".asset");
-                c.displayName = p.name; c.mainColor = p.color; c.pawnPrefab = BuildPawn(p.name.Replace(" ", "_"), p.cell);
+                var p = pawns[i];
+                string key = p.name.Replace(" ", "_");
+                var c = Load<CharacterAsset>(Root + "/Personajes/" + key + ".asset");
+                c.id = key.ToLowerInvariant();
+                c.displayName = p.name;
+                c.description = "Personaje provisional. Se sustituye por el definitivo en este mismo asset.";
+                c.mainColor = p.color;
+                c.pawnPrefab = BuildPawn(key, p.cell);
+                c.portrait = PortraitPainter.Build(Root + "/Personajes/Retratos", key, p.color, i);
                 EditorUtility.SetDirty(c);
                 content.characters.Add(c);
             }
+            content.menuArt = MenuArtBuilder.Run();
 
             EditorUtility.SetDirty(content);
             AssetDatabase.SaveAssets();
