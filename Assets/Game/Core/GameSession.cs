@@ -6,6 +6,7 @@ namespace RobaColores.Game.Core
     public enum GamePhase
     {
         Setup,
+        AwaitingOrderRoll,
         AwaitingMoveRoll,
         AwaitingPathChoice,
         MinigameRunning,
@@ -15,7 +16,7 @@ namespace RobaColores.Game.Core
 
     public enum GameEventType
     {
-        OrderDetermined, TurnStarted, TurnSkipped, MoveRolled, TimePenaltyApplied, PathChoiceRequired, PlayerMoved,
+        OrderRollStarted, OrderRollCompleted, OrderDetermined, TurnStarted, TurnSkipped, MoveRolled, TimePenaltyApplied, PathChoiceRequired, PlayerMoved,
         MinigameStarted, MinigameFinished, RowSelectionRequired, RewardsApplied, NoWinnerInMinigame, PlayerDisqualified, GameOver,
     }
 
@@ -44,6 +45,9 @@ namespace RobaColores.Game.Core
         readonly Dictionary<int, PlayerState> playersById = new Dictionary<int, PlayerState>();
         readonly List<GameEvent> log = new List<GameEvent>();
         List<int> turnOrder = new List<int>();
+        readonly Stack<List<int>> pendingOrderGroups = new Stack<List<int>>();
+        List<int> activeOrderGroup;
+        int orderRollIndex;
         int currentIndex;
         int pendingSteps;
         List<int> winnersOfRound = new List<int>();
@@ -52,6 +56,7 @@ namespace RobaColores.Game.Core
         public event Action<GameEvent> Event;
 
         public GamePhase Phase { get; private set; }
+        public int? CurrentOrderPlayerId { get; private set; }
         public IList<PlayerState> Players { get { return players; } }
         public IList<int> TurnOrder { get { return turnOrder; } }
         public TurnOrderResult OrderResult { get; private set; }
@@ -107,11 +112,80 @@ namespace RobaColores.Game.Core
 
             foreach (var p in players) p.TileId = Board.StartId;
 
-            var ids = new List<int>();
-            foreach (var p in players) ids.Add(p.Id);
-            OrderResult = TurnOrderResolver.Resolve(ids, initialDie, rng);
+            OrderResult = new TurnOrderResult();
             turnOrder = OrderResult.Order;
             currentIndex = 0;
+            var ids = new List<int>();
+            foreach (var p in players) ids.Add(p.Id);
+            pendingOrderGroups.Push(ids);
+            Phase = GamePhase.AwaitingOrderRoll;
+            BeginNextOrderGroup();
+        }
+
+        public int RollOrderDie()
+        {
+            Require(Phase == GamePhase.AwaitingOrderRoll, "No es momento de tirar el dado de orden.");
+            int playerId = CurrentOrderPlayerId.Value;
+            int roll = initialDie.Roll(rng);
+            OrderResult.Rounds[OrderResult.Rounds.Count - 1][playerId] = roll;
+            Emit(new GameEvent { Type = GameEventType.OrderRollCompleted, PlayerId = playerId, A = roll });
+
+            orderRollIndex++;
+            if (orderRollIndex < activeOrderGroup.Count)
+            {
+                CurrentOrderPlayerId = activeOrderGroup[orderRollIndex];
+                Emit(new GameEvent { Type = GameEventType.OrderRollStarted, PlayerId = CurrentOrderPlayerId.Value });
+            }
+            else
+            {
+                ResolveOrderGroup();
+            }
+
+            return roll;
+        }
+
+        void ResolveOrderGroup()
+        {
+            var rolls = OrderResult.Rounds[OrderResult.Rounds.Count - 1];
+            var values = new List<int>(rolls.Values);
+            values.Sort((a, b) => b.CompareTo(a));
+            var segments = new List<List<int>>();
+            var seen = new HashSet<int>();
+            foreach (var value in values)
+            {
+                if (!seen.Add(value)) continue;
+                var tied = new List<int>();
+                foreach (var id in activeOrderGroup)
+                    if (rolls[id] == value) tied.Add(id);
+                segments.Add(tied);
+            }
+
+            for (int i = segments.Count - 1; i >= 0; i--)
+                pendingOrderGroups.Push(segments[i]);
+            activeOrderGroup = null;
+            BeginNextOrderGroup();
+        }
+
+        void BeginNextOrderGroup()
+        {
+            while (pendingOrderGroups.Count > 0)
+            {
+                var group = pendingOrderGroups.Pop();
+                if (group.Count == 1)
+                {
+                    turnOrder.Add(group[0]);
+                    continue;
+                }
+
+                activeOrderGroup = group;
+                orderRollIndex = 0;
+                CurrentOrderPlayerId = group[0];
+                OrderResult.Rounds.Add(new Dictionary<int, int>());
+                Emit(new GameEvent { Type = GameEventType.OrderRollStarted, PlayerId = CurrentOrderPlayerId.Value });
+                return;
+            }
+
+            CurrentOrderPlayerId = null;
             Emit(new GameEvent { Type = GameEventType.OrderDetermined, PlayerId = turnOrder[0] });
             BeginTurn();
         }

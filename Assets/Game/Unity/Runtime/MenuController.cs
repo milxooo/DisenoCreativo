@@ -45,6 +45,13 @@ namespace RobaColores.Game.Presentation
         void Awake()
         {
             if (content == null) { Debug.LogError("MenuController necesita el asset GameContent."); enabled = false; return; }
+            if (content.settings == null || content.settings.minPlayers < 2 || content.settings.maxPlayers > 4 ||
+                content.settings.minPlayers > content.settings.maxPlayers)
+            {
+                Debug.LogError("GameSettings debe permitir una cantidad de entre dos y cuatro jugadores.", this);
+                enabled = false;
+                return;
+            }
             UiKit.Font = content.uiFont;
             UiKit.EnsureEventSystem();
             Time.timeScale = 1f;
@@ -69,7 +76,7 @@ namespace RobaColores.Game.Presentation
             paper.raycastTarget = false;
             UiKit.Stretch(paper.rectTransform);
 
-            selection = new CharacterSelection(content.settings.maxPlayers, content.characters.Count, content.settings.allowRepeatedCharacters);
+            selection = new CharacterSelection(content.settings.minPlayers, content.characters.Count, content.settings.allowRepeatedCharacters);
             if (!content.settings.allowRepeatedCharacters && content.characters.Count < content.settings.maxPlayers)
                 Debug.LogError("Hay menos personajes (" + content.characters.Count + ") que jugadores (" + content.settings.maxPlayers + ") y no se permite repetir: no se podra empezar.");
 
@@ -321,7 +328,7 @@ namespace RobaColores.Game.Presentation
             diceRt.anchorMin = diceRt.anchorMax = new Vector2(0.5f, 0.5f);
             diceRt.pivot = new Vector2(0.5f, 0.5f);
             diceRt.anchoredPosition = new Vector2(0f, 30f);
-            var label = UiKit.Label(holder, "¡A jugar!", 96, TextAnchor.MiddleCenter, UiKit.Gold);
+            var label = UiKit.Label(holder, "¿Quién empieza?", 96, TextAnchor.MiddleCenter, UiKit.Gold);
             UiKit.Place(label.rectTransform, 0, 0, 1, 0, 0, -120, 0, -10);
             label.raycastTarget = false;
 
@@ -342,7 +349,7 @@ namespace RobaColores.Game.Presentation
             Header(g, "Opciones");
             var s = content.settings;
             var sb = new StringBuilder();
-            sb.AppendLine("Jugadores: exactamente " + s.maxPlayers);
+            sb.AppendLine("Jugadores: de " + s.minPlayers + " a " + s.maxPlayers + " (selecciona la cantidad al elegir personajes)");
             sb.AppendLine("Repetir personajes: " + (s.allowRepeatedCharacters ? "sí" : "no") + "   [regla provisional]");
             sb.AppendLine("Duración del minijuego: " + s.minigameSeconds + " s");
             sb.AppendLine("Unidades iniciales por color: " + s.initialUnitsPerColor);

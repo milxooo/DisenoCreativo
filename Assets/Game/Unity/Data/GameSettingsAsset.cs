@@ -16,8 +16,8 @@ namespace RobaColores.Game.Presentation
     [CreateAssetMenu(menuName = "Roba Colores/Ajustes de partida", fileName = "GameSettings")]
     public class GameSettingsAsset : ScriptableObject
     {
-        public int minPlayers = 6;
-        public int maxPlayers = 6;
+        public int minPlayers = 2;
+        public int maxPlayers = 4;
         [Tooltip("PROVISIONAL: si es false, cada jugador debe elegir un personaje distinto. Regla aun sin decidir.")]
         public bool allowRepeatedCharacters;
         public int initialUnitsPerColor = 200;

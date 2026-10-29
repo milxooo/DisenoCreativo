@@ -7,20 +7,20 @@ namespace RobaColores.Game.Tests
 {
     public class CharacterSelectionTests
     {
-        static CharacterSelection Six(bool repeats = false) { return new CharacterSelection(6, 6, repeats); }
+        static CharacterSelection Four(bool repeats = false) { return new CharacterSelection(4, 6, repeats); }
 
-        [Test] public void HasExactlySixSlotsAllPendingAtStart()
+        [Test] public void HasExactlyFourSlotsAllPendingAtStart()
         {
-            var s = Six();
-            Assert.AreEqual(6, s.SlotCount);
-            for (int i = 0; i < 6; i++) { Assert.AreEqual(SlotState.Pending, s.Slot(i).State); Assert.AreEqual(i + 1, s.Slot(i).Number); }
+            var s = Four();
+            Assert.AreEqual(4, s.SlotCount);
+            for (int i = 0; i < 4; i++) { Assert.AreEqual(SlotState.Pending, s.Slot(i).State); Assert.AreEqual(i + 1, s.Slot(i).Number); }
             Assert.IsFalse(s.CanStart);
-            Assert.AreEqual(6, s.Missing().Count);
+            Assert.AreEqual(4, s.Missing().Count);
         }
 
         [Test] public void SelectThenConfirmFollowsTheStates()
         {
-            var s = Six();
+            var s = Four();
             Assert.IsFalse(s.Confirm(0), "no se puede confirmar sin elegir");
             Assert.IsTrue(s.Select(0, 2));
             Assert.AreEqual(SlotState.Selected, s.Slot(0).State);
@@ -33,21 +33,21 @@ namespace RobaColores.Game.Tests
             Assert.AreEqual(3, s.Slot(0).CharacterId);
         }
 
-        [Test] public void StartStaysBlockedUntilAllSixAreConfirmed()
+        [Test] public void StartStaysBlockedUntilAllSelectedPlayersAreConfirmed()
         {
-            var s = Six();
-            for (int i = 0; i < 5; i++) { s.Select(i, i); s.Confirm(i); Assert.IsFalse(s.CanStart); }
+            var s = Four();
+            for (int i = 0; i < 3; i++) { s.Select(i, i); s.Confirm(i); Assert.IsFalse(s.CanStart); }
             Assert.AreEqual(1, s.Missing().Count);
             Assert.Throws<InvalidOperationException>(() => s.ConfirmedCharacters());
-            s.Select(5, 5); Assert.IsFalse(s.CanStart, "seleccionado no basta, hay que confirmar");
-            s.Confirm(5);
+            s.Select(3, 5); Assert.IsFalse(s.CanStart, "seleccionado no basta, hay que confirmar");
+            s.Confirm(3);
             Assert.IsTrue(s.CanStart);
-            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4, 5 }, s.ConfirmedCharacters());
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 5 }, s.ConfirmedCharacters());
         }
 
         [Test] public void WithoutRepeatsTakenCharactersAreUnavailableToOthers()
         {
-            var s = Six();
+            var s = Four();
             s.Select(0, 1);
             Assert.IsFalse(s.IsAvailable(1, 1));
             Assert.IsFalse(s.Select(1, 1));
@@ -57,7 +57,7 @@ namespace RobaColores.Game.Tests
 
         [Test] public void RepeatsAreAllowedWhenConfigured()
         {
-            var s = Six(true);
+            var s = Four(true);
             Assert.IsTrue(s.Select(0, 1)); Assert.IsTrue(s.Select(1, 1));
             s.Confirm(0); s.Confirm(1);
             Assert.AreEqual(0, s.Validate().FindAll(p => p.Contains("mismo personaje")).Count);
@@ -65,8 +65,8 @@ namespace RobaColores.Game.Tests
 
         [Test] public void TurningRepeatsOffReportsExistingDuplicates()
         {
-            var s = Six(true);
-            for (int i = 0; i < 6; i++) { s.Select(i, i == 5 ? 0 : i); s.Confirm(i); }
+            var s = Four(true);
+            for (int i = 0; i < 4; i++) { s.Select(i, i == 3 ? 0 : i); s.Confirm(i); }
             Assert.IsTrue(s.CanStart);
             s.AllowRepeats = false;
             Assert.IsFalse(s.CanStart);
@@ -75,7 +75,7 @@ namespace RobaColores.Game.Tests
 
         [Test] public void CycleSkipsTakenCharactersAndWraps()
         {
-            var s = Six();
+            var s = Four();
             s.Select(1, 0); s.Select(2, 1);              // J2 tiene 0, J3 tiene 1
             Assert.IsTrue(s.Cycle(0, 1));                // desde Pendiente: primer disponible = 2
             Assert.AreEqual(2, s.Slot(0).CharacterId);
@@ -87,7 +87,7 @@ namespace RobaColores.Game.Tests
 
         [Test] public void ConfirmedSlotsCannotCycleAndClearResetsToPending()
         {
-            var s = Six();
+            var s = Four();
             s.Cycle(0, 1); s.Confirm(0);
             Assert.IsFalse(s.Cycle(0, 1));
             s.Unconfirm(0); s.Clear(0);
@@ -97,28 +97,39 @@ namespace RobaColores.Game.Tests
 
         [Test] public void InvalidCharacterIndexesAreRejected()
         {
-            var s = Six();
+            var s = Four();
             Assert.IsFalse(s.Select(0, -1)); Assert.IsFalse(s.Select(0, 6));
             Assert.IsFalse(s.IsAvailable(0, 99));
         }
+
+        [Test] public void PlayerCountCanChangeFromTwoToFourAndCannotFallBelowTwo()
+        {
+            var s = new CharacterSelection(2, 6, false);
+            s.SetSlotCount(4);
+            Assert.AreEqual(4, s.SlotCount);
+            s.SetSlotCount(2);
+            Assert.AreEqual(2, s.SlotCount);
+            Assert.Throws<ArgumentOutOfRangeException>(() => s.SetSlotCount(1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => s.SetSlotCount(5));
+        }
     }
 
-    public class SixPlayerSessionTests
+    public class FourPlayerSessionTests
     {
-        [Test] public void SessionSupportsSixPlayersWithSixCharacters()
+        [Test] public void SessionSupportsFourPlayersWithFourCharacters()
         {
-            var s = Fixtures.Session(new QueueRandom(1, 2, 3, 4, 5, 6, 0, 0), 6);
-            Assert.AreEqual(6, s.Players.Count);
-            s.StartGame();
-            Assert.AreEqual(6, s.TurnOrder.Count);
-            CollectionAssert.AreEqual(new[] { 5, 4, 3, 2, 1, 0 }, new List<int>(s.TurnOrder), "orden por tirada descendente");
+            var s = Fixtures.Session(new QueueRandom(1, 2, 3, 4, 0, 0), 4);
+            Assert.AreEqual(4, s.Players.Count);
+            Fixtures.StartAndRollOrder(s);
+            Assert.AreEqual(4, s.TurnOrder.Count);
+            CollectionAssert.AreEqual(new[] { 3, 2, 1, 0 }, new List<int>(s.TurnOrder), "orden por tirada descendente");
             foreach (var p in s.Players) Assert.AreEqual(s.Board.StartId, p.TileId);
         }
 
-        [Test] public void SeventhPlayerIsRejected()
+        [Test] public void FifthPlayerIsRejected()
         {
-            var s = Fixtures.Session(new QueueRandom(1), 6);
-            Assert.Throws<InvalidOperationException>(() => s.AddPlayer("J7", 6));
+            var s = Fixtures.Session(new QueueRandom(1), 4);
+            Assert.Throws<InvalidOperationException>(() => s.AddPlayer("J5", 4));
         }
 
         [Test] public void RepeatedCharacterIsRejectedUnlessConfigured()

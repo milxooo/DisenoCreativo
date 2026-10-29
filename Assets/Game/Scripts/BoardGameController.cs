@@ -386,7 +386,7 @@ namespace RobaColores.Game
         {
             var playerIndex = initialRollQueue.Dequeue();
             initialRollParticipants.Add(playerIndex);
-            var result = UnityEngine.Random.Range(1, 5);
+            var result = UnityEngine.Random.Range(1, 7);
             players[playerIndex].initialRoll = result;
             message = players[playerIndex].setup.characterName + " sacó " + result + ".";
             lastRoll = result.ToString();

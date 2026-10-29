@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Pirata_Azul
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.CharacterAsset
   id: pirata_azul
-  displayName: Pirata Azul
-  description: Personaje provisional. Se sustituye por el definitivo en este mismo
-    asset.
+  displayName: Oso Marinero
+  description: Personaje ilustrado con su retrato y modelo de tablero.
   mainColor: {r: 0.23529412, g: 0.47058824, b: 0.84705883, a: 1}
   portrait: {fileID: 21300000, guid: ebbaddbf8386a3a4d888ace853e548cd, type: 3}
   pawnPrefab: {fileID: 6243041695364480340, guid: a1d4843d25e48954892dcb680c5d2853, type: 3}

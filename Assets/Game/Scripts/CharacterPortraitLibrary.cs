@@ -18,6 +18,16 @@ namespace RobaColores.Game
             "CharacterArt/PixelGrumete"
         };
 
+        static readonly string[] GameArtworkPaths =
+        {
+            "CharacterArt/PixelGrumete",
+            "CharacterArt/PirateBear",
+            "CharacterArt/OctopusPirate",
+            "CharacterArt/PirateCaptain",
+            "CharacterArt/PixelPirate",
+            "CharacterArt/SeaArcher"
+        };
+
         static readonly Color32[] BackgroundColors =
         {
             new Color32(36, 101, 130, 255),
@@ -30,8 +40,42 @@ namespace RobaColores.Game
         };
 
         static readonly Texture2D[] portraits = new Texture2D[CharacterCount];
+        static readonly Texture2D[] gameArtwork = new Texture2D[GameArtworkPaths.Length];
+        static readonly bool[] gameArtworkLoaded = new bool[GameArtworkPaths.Length];
         static readonly List<string> missingResources = new List<string>();
+        static Material artworkMaterial;
         static bool initialized;
+
+        public static Texture2D GetCharacterArtwork(int characterIndex)
+        {
+            if (characterIndex < 0 || characterIndex >= GameArtworkPaths.Length)
+                throw new System.ArgumentOutOfRangeException(nameof(characterIndex));
+            if (!gameArtworkLoaded[characterIndex])
+            {
+                gameArtwork[characterIndex] = Resources.Load<Texture2D>(GameArtworkPaths[characterIndex]);
+                gameArtworkLoaded[characterIndex] = true;
+                if (gameArtwork[characterIndex] == null)
+                    Debug.LogError("Falta el arte del personaje en Assets/Resources/" + GameArtworkPaths[characterIndex] + ".png.");
+            }
+            return gameArtwork[characterIndex];
+        }
+
+        public static Material GetArtworkMaterial()
+        {
+            if (artworkMaterial != null) return artworkMaterial;
+            var shader = Shader.Find("RobaColores/CharacterCutout");
+            if (shader == null)
+            {
+                Debug.LogError("No se encontró el shader RobaColores/CharacterCutout para mostrar el arte de los personajes.");
+                return null;
+            }
+            artworkMaterial = new Material(shader)
+            {
+                name = "Material de personajes ilustrados",
+                hideFlags = HideFlags.DontSave
+            };
+            return artworkMaterial;
+        }
 
         public static Texture2D GetPortrait(int characterIndex)
         {

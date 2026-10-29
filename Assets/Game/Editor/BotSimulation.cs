@@ -29,9 +29,9 @@ namespace RobaColores.Game.EditorTools
             {
                 var rng = new SystemRandomSource(1000 + g);
                 var cfg = content.BuildConfig();
-                cfg.MinPlayers = 2;   // la simulacion prueba tambien partidas con menos de 6 jugadores
+                cfg.MinPlayers = 2;
                 var session = new GameSession(cfg, board.BuildGraph(), content.BuildCatalog(), rng);
-                int players = g % 4 == 3 ? 6 : 2 + g % 3;
+                int players = 2 + g % 3;
                 for (int i = 0; i < players; i++) session.AddPlayer("Bot" + i, i);
                 double accuracy = 0.55 + 0.45 * ((g * 37) % 100) / 100.0;
                 int turns = 0;
@@ -43,6 +43,7 @@ namespace RobaColores.Game.EditorTools
                         turns++;
                         switch (session.Phase)
                         {
+                            case GamePhase.AwaitingOrderRoll: session.RollOrderDie(); break;
                             case GamePhase.AwaitingMoveRoll: session.RollMoveDie(); break;
                             case GamePhase.AwaitingPathChoice:
                                 session.ChoosePath(session.PathOptions[rng.Next(0, session.PathOptions.Count)]); break;

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55273b8727c6d8e468c297a157cf7a09, type: 3}
   m_Name: GameSettings
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.GameSettingsAsset
-  minPlayers: 6
-  maxPlayers: 6
+  minPlayers: 2
+  maxPlayers: 4
   allowRepeatedCharacters: 0
   initialUnitsPerColor: 200
   minigameSeconds: 90

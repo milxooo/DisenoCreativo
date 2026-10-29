@@ -7,13 +7,14 @@ using static RobaColores.Game.Presentation.MenuWidgets;
 
 namespace RobaColores.Game.Presentation
 {
-    // Pantalla de seleccion: un panel por jugador (3 x 2 para seis) con retrato, flechas, estado y confirmacion.
+    // Pantalla de selección: un panel por jugador con retrato, flechas, estado y confirmación.
     // Toda la validacion vive en CharacterSelection (nucleo); esta vista solo la muestra y le envia ordenes.
     public sealed class CharacterSelectionView : MonoBehaviour
     {
         sealed class SlotUi
         {
             public Image frame, chip, portraitBack, portrait;
+            public RawImage artwork;
             public Text title, chipText, mark, nameText;
             public Button prev, next, confirm;
             public Image[] swatchBorders, swatchFills;
@@ -23,8 +24,12 @@ namespace RobaColores.Game.Presentation
         GameContent content;
         CharacterSelection model;
         SlotUi[] slots;
+        RectTransform slotsRoot;
+        Text playerCount;
         Text status;
         Button startButton;
+        Button fewerPlayers, morePlayers;
+        Material artworkMaterial;
 
         public Button StartButton { get { return startButton; } }
         public Text StatusText { get { return status; } }
@@ -42,23 +47,24 @@ namespace RobaColores.Game.Presentation
         void Build(RectTransform root, GameContent gameContent, CharacterSelection selection, Action onStart, Action onBack)
         {
             content = gameContent; model = selection;
+            artworkMaterial = CharacterPortraitLibrary.GetArtworkMaterial();
 
             var title = UiKit.Label(root, "Selección de personajes", 88, TextAnchor.MiddleCenter, UiKit.Ink);
             Abs(title.rectTransform, 100, 945, 1193, 120);
-            var hint = UiKit.Label(root, "Cada jugador elige su personaje y pulsa CONFIRMAR. Con los " + SpanishCount(model.SlotCount) + " confirmados se activa COMENZAR.", 30, TextAnchor.MiddleCenter, UiKit.Wood);
-            Abs(hint.rectTransform, 100, 898, 1193, 46);
+            var hint = UiKit.Label(root, "Elijan entre dos y cuatro jugadores. Cada uno selecciona y confirma su personaje.", 28, TextAnchor.MiddleCenter, UiKit.Wood);
+            Abs(hint.rectTransform, 100, 899, 1193, 42);
 
-            int cols = 3, rows = Mathf.CeilToInt(model.SlotCount / (float)cols);
-            const float pw = 400f, ph = 330f, gapX = 28f, gapY = 18f;
-            float totalW = cols * pw + (cols - 1) * gapX;
-            float left = (1393f - totalW) / 2f;
-            float top = 890f;
-            slots = new SlotUi[model.SlotCount];
-            for (int i = 0; i < model.SlotCount; i++)
-            {
-                int col = i % cols, row = i / cols;
-                BuildSlot(root, i, left + col * (pw + gapX), top - ph - row * (ph + gapY), pw, ph);
-            }
+            var countLabel = UiKit.Label(root, "JUGADORES", 27, TextAnchor.MiddleRight, UiKit.Ink);
+            Abs(countLabel.rectTransform, 470, 831, 185, 42);
+            fewerPlayers = FrameButton(root, "-", 30, () => ChangePlayerCount(-1));
+            Abs((RectTransform)fewerPlayers.transform, 670, 831, 54, 42);
+            playerCount = UiKit.Label(root, "", 32, TextAnchor.MiddleCenter, UiKit.Ink);
+            Abs(playerCount.rectTransform, 728, 831, 70, 42);
+            morePlayers = FrameButton(root, "+", 30, () => ChangePlayerCount(1));
+            Abs((RectTransform)morePlayers.transform, 802, 831, 54, 42);
+
+            slotsRoot = UiKit.Rect(root, "EspaciosJugadores");
+            UiKit.Stretch(slotsRoot);
 
             var back = FrameButton(root, "VOLVER", 42, onBack, UiKit.ParchmentDark);
             Abs((RectTransform)back.transform, 60, 52, 260, 76);
@@ -67,6 +73,33 @@ namespace RobaColores.Game.Presentation
             startButton = FrameButton(root, "COMENZAR", 52, onStart, new Color32(0xF2, 0xC2, 0x30, 255));
             Abs((RectTransform)startButton.transform, 1050, 40, 290, 96);
 
+            RebuildSlots();
+        }
+
+        void ChangePlayerCount(int delta)
+        {
+            int count = model.SlotCount + delta;
+            if (count < content.settings.minPlayers || count > content.settings.maxPlayers) return;
+            model.SetSlotCount(count);
+            RebuildSlots();
+        }
+
+        void RebuildSlots()
+        {
+            UiKit.Clear(slotsRoot);
+            int count = model.SlotCount;
+            int cols = count == 3 ? 3 : 2;
+            int rows = Mathf.CeilToInt(count / (float)cols);
+            const float pw = 400f, ph = 330f, gapX = 28f, gapY = 18f;
+            float totalW = cols * pw + (cols - 1) * gapX;
+            float left = (1393f - totalW) / 2f;
+            float top = rows == 1 ? 760f : 800f;
+            slots = new SlotUi[count];
+            for (int i = 0; i < count; i++)
+            {
+                int col = i % cols, row = i / cols;
+                BuildSlot(slotsRoot, i, left + col * (pw + gapX), top - ph - row * (ph + gapY), pw, ph);
+            }
             Refresh();
         }
 
@@ -99,6 +132,13 @@ namespace RobaColores.Game.Presentation
             pImg.preserveAspect = true;
             pImg.raycastTarget = false;
             ui.portrait = pImg;
+            var artworkObject = new GameObject("ArteIlustrado", typeof(RectTransform), typeof(RawImage));
+            artworkObject.transform.SetParent(ui.portraitBack.transform, false);
+            ui.artwork = artworkObject.GetComponent<RawImage>();
+            UiKit.Place(ui.artwork.rectTransform, 0, 0, 1, 1, 4, 4, -4, -4);
+            ui.artwork.material = artworkMaterial;
+            ui.artwork.uvRect = new Rect(0.15f, 0f, 0.7f, 1f);
+            ui.artwork.raycastTarget = false;
             ui.mark = UiKit.Label(ui.portraitBack.transform, "?", 110, TextAnchor.MiddleCenter, UiKit.Ink);
             UiKit.Stretch(ui.mark.rectTransform);
 
@@ -143,6 +183,9 @@ namespace RobaColores.Game.Presentation
         // Vuelve a pintar todo desde el modelo: la interfaz nunca guarda su propio estado.
         public void Refresh()
         {
+            playerCount.text = model.SlotCount.ToString();
+            fewerPlayers.interactable = model.SlotCount > content.settings.minPlayers;
+            morePlayers.interactable = model.SlotCount < content.settings.maxPlayers;
             for (int i = 0; i < slots.Length; i++)
             {
                 var ui = slots[i];
@@ -161,7 +204,12 @@ namespace RobaColores.Game.Presentation
                 }
 
                 ui.portraitBack.color = has ? Color.Lerp(ch.mainColor, UiKit.Parchment, 0.45f) : UiKit.ParchmentDark;
-                if (has && ch.portrait != null) { ui.portrait.sprite = ch.portrait; ui.portrait.enabled = true; ui.mark.enabled = false; }
+                var art = has ? CharacterPortraitLibrary.GetCharacterArtwork(s.CharacterId) : null;
+                ui.artwork.texture = art;
+                bool showArtwork = art != null && artworkMaterial != null;
+                ui.artwork.enabled = showArtwork;
+                if (has && showArtwork) { ui.portrait.enabled = false; ui.mark.enabled = false; }
+                else if (has && ch.portrait != null) { ui.portrait.sprite = ch.portrait; ui.portrait.enabled = true; ui.mark.enabled = false; }
                 else
                 {
                     ui.portrait.enabled = false;
@@ -191,7 +239,7 @@ namespace RobaColores.Game.Presentation
             startButton.interactable = canStart;
             if (canStart)
             {
-                status.text = "Todos listos";
+                status.text = "Todos los jugadores listos";
                 status.color = new Color32(0x2F, 0x6E, 0x2A, 255);
             }
             else

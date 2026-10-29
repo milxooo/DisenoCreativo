@@ -53,7 +53,7 @@ namespace RobaColores.Game.EditorTools
                 "...BBBB...\n..BBBBBB..\n.BBBBBBBB.\nWWWWWWWWWW\n.BBBBBBBB.\n..BBBBBB..\n...BBBB..."),
         };
 
-        struct Pawn { public string name; public Color color; public int cell; }
+        struct Pawn { public string name, displayName; public Color color; public int cell; }
 
         [MenuItem("Roba Colores/Fase 2 - Generar contenido del juego")]
         public static void Run()
@@ -70,7 +70,7 @@ namespace RobaColores.Game.EditorTools
             EditorUtility.SetDirty(palette);
 
             var settings = Load<GameSettingsAsset>(Root + "/GameSettings.asset");
-            settings.minPlayers = 6; settings.maxPlayers = 6; settings.allowRepeatedCharacters = false;
+            settings.minPlayers = 2; settings.maxPlayers = 4; settings.allowRepeatedCharacters = false;
             settings.moveDieFaces = new List<MoveFaceData>
             {
                 new MoveFaceData { kind = MoveFaceKind.Advance, steps = 1 }, new MoveFaceData { kind = MoveFaceKind.Advance, steps = 2 },
@@ -96,12 +96,12 @@ namespace RobaColores.Game.EditorTools
 
             var pawns = new[]
             {
-                new Pawn { name = "Pirata Rojo", color = Hex("D8363A"), cell = TileRed },
-                new Pawn { name = "Pirata Azul", color = Hex("3C78D8"), cell = TileBlue },
-                new Pawn { name = "Pirata Verde", color = Hex("3FAE4A"), cell = TileGreen },
-                new Pawn { name = "Pirata Morado", color = Hex("8E4FBF"), cell = TilePurple },
-                new Pawn { name = "Pirata Naranja", color = Hex("F08A24"), cell = TileOrange },
-                new Pawn { name = "Pirata Amarillo", color = Hex("F2D335"), cell = TileYellow },
+                new Pawn { name = "Pirata Rojo", displayName = "Grumete", color = Hex("D8363A"), cell = TileRed },
+                new Pawn { name = "Pirata Azul", displayName = "Oso Marinero", color = Hex("3C78D8"), cell = TileBlue },
+                new Pawn { name = "Pirata Verde", displayName = "Pulpo Bucanero", color = Hex("3FAE4A"), cell = TileGreen },
+                new Pawn { name = "Pirata Morado", displayName = "Capitán Brújula", color = Hex("8E4FBF"), cell = TilePurple },
+                new Pawn { name = "Pirata Naranja", displayName = "Pirata Pixel", color = Hex("F08A24"), cell = TileOrange },
+                new Pawn { name = "Pirata Amarillo", displayName = "Arquera del Mar", color = Hex("F2D335"), cell = TileYellow },
             };
             content.characters = new List<CharacterAsset>();
             for (int i = 0; i < pawns.Length; i++)
@@ -110,8 +110,8 @@ namespace RobaColores.Game.EditorTools
                 string key = p.name.Replace(" ", "_");
                 var c = Load<CharacterAsset>(Root + "/Personajes/" + key + ".asset");
                 c.id = key.ToLowerInvariant();
-                c.displayName = p.name;
-                c.description = "Personaje provisional. Se sustituye por el definitivo en este mismo asset.";
+                c.displayName = p.displayName;
+                c.description = "Personaje ilustrado con su retrato y modelo de tablero.";
                 c.mainColor = p.color;
                 c.pawnPrefab = BuildPawn(key, p.cell);
                 c.portrait = PortraitPainter.Build(Root + "/Personajes/Retratos", key, p.color, i);

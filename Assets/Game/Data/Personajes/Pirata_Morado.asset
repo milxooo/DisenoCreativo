@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Pirata_Morado
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.CharacterAsset
   id: pirata_morado
-  displayName: Pirata Morado
-  description: Personaje provisional. Se sustituye por el definitivo en este mismo
-    asset.
+  displayName: Capitán Brújula
+  description: Personaje ilustrado con su retrato y modelo de tablero.
   mainColor: {r: 0.5568628, g: 0.30980393, b: 0.7490196, a: 1}
   portrait: {fileID: 21300000, guid: 9f4bb18ea8fed0f4ab57d8f1475a8ee9, type: 3}
   pawnPrefab: {fileID: 5033455229536329587, guid: 024b678d51025254c83ffe2d3dcbe8f6, type: 3}

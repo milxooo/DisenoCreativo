@@ -16,28 +16,36 @@ namespace RobaColores.Game.Core
     // La repeticion de personajes es una regla configurable (AllowRepeats), no una restriccion fija.
     public sealed class CharacterSelection
     {
-        readonly PlayerSlot[] slots;
+        readonly List<PlayerSlot> slots;
         readonly int characterCount;
 
         public bool AllowRepeats { get; set; }
-        public int SlotCount { get { return slots.Length; } }
+        public int SlotCount { get { return slots.Count; } }
         public int CharacterCount { get { return characterCount; } }
 
         public CharacterSelection(int slotCount, int characterCount, bool allowRepeats)
         {
-            if (slotCount <= 0 || characterCount <= 0) throw new ArgumentException("Hacen falta jugadores y personajes.");
+            if (slotCount < 2 || slotCount > 4 || characterCount <= 0)
+                throw new ArgumentException("La selección requiere de dos a cuatro jugadores y al menos un personaje.");
             this.characterCount = characterCount;
             AllowRepeats = allowRepeats;
-            slots = new PlayerSlot[slotCount];
-            for (int i = 0; i < slotCount; i++) slots[i] = new PlayerSlot { Number = i + 1 };
+            slots = new List<PlayerSlot>(slotCount);
+            for (int i = 0; i < slotCount; i++) slots.Add(new PlayerSlot { Number = i + 1 });
         }
 
         public PlayerSlot Slot(int index) { return slots[index]; }
 
+        public void SetSlotCount(int count)
+        {
+            if (count < 2 || count > 4) throw new ArgumentOutOfRangeException(nameof(count), "La partida admite de dos a cuatro jugadores.");
+            while (slots.Count > count) slots.RemoveAt(slots.Count - 1);
+            while (slots.Count < count) slots.Add(new PlayerSlot { Number = slots.Count + 1 });
+        }
+
         // Indice del otro hueco que tiene ese personaje (elegido o confirmado), o -1.
         public int OwnerOf(int character, int exceptSlot)
         {
-            for (int i = 0; i < slots.Length; i++)
+            for (int i = 0; i < slots.Count; i++)
                 if (i != exceptSlot && slots[i].CharacterId == character) return i;
             return -1;
         }
@@ -102,7 +110,7 @@ namespace RobaColores.Game.Core
         public List<int> Missing()
         {
             var res = new List<int>();
-            for (int i = 0; i < slots.Length; i++) if (slots[i].State != SlotState.Confirmed) res.Add(i);
+            for (int i = 0; i < slots.Count; i++) if (slots[i].State != SlotState.Confirmed) res.Add(i);
             return res;
         }
 
@@ -112,8 +120,8 @@ namespace RobaColores.Game.Core
             var problems = new List<string>();
             foreach (var m in Missing()) problems.Add("Falta confirmar al jugador " + slots[m].Number + ".");
             if (!AllowRepeats)
-                for (int i = 0; i < slots.Length; i++)
-                    for (int j = i + 1; j < slots.Length; j++)
+                for (int i = 0; i < slots.Count; i++)
+                    for (int j = i + 1; j < slots.Count; j++)
                         if (slots[i].CharacterId >= 0 && slots[i].CharacterId == slots[j].CharacterId)
                             problems.Add("Los jugadores " + slots[i].Number + " y " + slots[j].Number + " tienen el mismo personaje.");
             return problems;
@@ -124,8 +132,8 @@ namespace RobaColores.Game.Core
         public int[] ConfirmedCharacters()
         {
             if (!CanStart) throw new InvalidOperationException("La seleccion no es valida: " + string.Join(" ", Validate().ToArray()));
-            var res = new int[slots.Length];
-            for (int i = 0; i < slots.Length; i++) res[i] = slots[i].CharacterId;
+            var res = new int[slots.Count];
+            for (int i = 0; i < slots.Count; i++) res[i] = slots[i].CharacterId;
             return res;
         }
     }

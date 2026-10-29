@@ -46,6 +46,35 @@ namespace RobaColores.Game.Tests
     public class TurnOrderTests
     {
         [Test]
+        public void PlayersRollForTheStartingOrderOneAtATime()
+        {
+            var s = Fixtures.Session(new QueueRandom(2, 6));
+            s.StartGame();
+
+            Assert.AreEqual(GamePhase.AwaitingOrderRoll, s.Phase);
+            Assert.AreEqual(0, s.CurrentOrderPlayerId);
+            Assert.AreEqual(2, s.RollOrderDie());
+            Assert.AreEqual(1, s.CurrentOrderPlayerId);
+            Assert.AreEqual(GamePhase.AwaitingOrderRoll, s.Phase);
+            Assert.AreEqual(6, s.RollOrderDie());
+            Assert.AreEqual(GamePhase.AwaitingMoveRoll, s.Phase);
+            Assert.AreEqual(1, s.CurrentPlayer.Id);
+            CollectionAssert.AreEqual(new[] { 1, 0 }, new List<int>(s.TurnOrder));
+        }
+
+        [Test]
+        public void TiedStartingRollsAreRepeatedInTurnOrderOnlyByTiedPlayers()
+        {
+            var s = Fixtures.Session(new QueueRandom(5, 5, 1, 6));
+            s.StartGame();
+            while (s.Phase == GamePhase.AwaitingOrderRoll) s.RollOrderDie();
+
+            Assert.AreEqual(2, s.OrderResult.Rounds.Count);
+            Assert.AreEqual(2, s.OrderResult.Rounds[1].Count);
+            CollectionAssert.AreEqual(new[] { 1, 0 }, new List<int>(s.TurnOrder));
+        }
+
+        [Test]
         public void HighestRollGoesFirst()
         {
             var r = TurnOrderResolver.Resolve(new[] { 0, 1, 2 }, new InitialDie(), new QueueRandom(2, 6, 4));
@@ -103,7 +132,7 @@ namespace RobaColores.Game.Tests
         public void MoveStopsAtForkAndWaitsForChoice()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 3, 0, 0)); // J1 saca Avanzar 4... (indice 3)
-            s.StartGame();
+            Fixtures.StartAndRollOrder(s);
             Assert.AreEqual(1, s.CurrentPlayer.Id);
             s.RollMoveDie();
             Assert.AreEqual(GamePhase.AwaitingPathChoice, s.Phase);
@@ -115,7 +144,7 @@ namespace RobaColores.Game.Tests
         public void InvalidPathIsRejected()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 3));
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             Assert.Throws<InvalidOperationException>(() => s.ChoosePath(1));
             Assert.Throws<InvalidOperationException>(() => s.ChoosePath(5));
         }
@@ -125,7 +154,7 @@ namespace RobaColores.Game.Tests
         {
             // Avanzar 4 desde INICIO: 0->1->2(bifurcacion). Elegir 3 -> consume paso 3 y luego 5 (META).
             var s = Fixtures.Session(new QueueRandom(2, 6, 3));
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             s.ChoosePath(3);
             Assert.AreEqual(GamePhase.GameOver, s.Phase);
             Assert.AreEqual(OutcomeKind.WinByFinish, s.Outcome.Kind);
@@ -137,7 +166,7 @@ namespace RobaColores.Game.Tests
         public void LandingOnColoredTileStartsMinigameOfItsCategory()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 0, 0)); // Avanzar 1 -> casilla 1 (Rojo)
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             Assert.AreEqual(GamePhase.MinigameRunning, s.Phase);
             Assert.AreEqual(Category.PartesDelCuerpo, s.Round.Category);
             Assert.AreEqual(Category.PartesDelCuerpo, s.Round.Figure.Category);
@@ -148,7 +177,7 @@ namespace RobaColores.Game.Tests
         {
             // J1 empieza, saca LoseTurn (indice 4). J0 juega (Avanzar 1 -> minijuego). Luego J1 pierde su turno.
             var s = Fixtures.Session(new QueueRandom(2, 6, 4, 0, 0));
-            s.StartGame();
+            Fixtures.StartAndRollOrder(s);
             s.RollMoveDie();
             Assert.AreEqual(0, s.CurrentPlayer.Id);
             Assert.IsTrue(s.GetPlayer(1).SkipNextTurn);
@@ -163,7 +192,7 @@ namespace RobaColores.Game.Tests
         public void TimePenaltyIsStoredForNextMinigame()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 5, 0, 0));
-            s.StartGame();
+            Fixtures.StartAndRollOrder(s);
             s.RollMoveDie();                 // J1: penalizacion
             Assert.AreEqual(s.Config.TimePenaltySeconds, s.GetPlayer(1).PendingTimePenalty);
             s.RollMoveDie();                 // J0 cae en casilla 1 -> minijuego
@@ -436,7 +465,7 @@ namespace RobaColores.Game.Tests
             var s = Fixtures.Session(new QueueRandom(2, 6, 0, 0));
             var events = new List<GameEventType>();
             s.Event += e => events.Add(e.Type);
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             Assert.AreEqual(GamePhase.MinigameRunning, s.Phase);
 
             // J0 dibuja la figura perfecta (0,1 / 1,-); J1 se queda a medias.
@@ -466,7 +495,7 @@ namespace RobaColores.Game.Tests
         public void EverybodyEmptyMeansNoMinigameWinnerAndNobodyStealsAnything()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 0, 0));
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             s.Tick(200f);                          // el temporizador termina el desafio
             Assert.AreEqual(GamePhase.AwaitingMoveRoll, s.Phase);
             Assert.AreEqual(0, s.RoundWinners.Count);
@@ -477,7 +506,7 @@ namespace RobaColores.Game.Tests
         {
             // 3 jugadores: orden J0=2, J1=6, J2=4 -> empieza J1, que saca Avanzar 1 y cae en una casilla roja.
             var s = Fixtures.Session(new QueueRandom(2, 6, 4, 0, 0), 3);
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             var fig = s.Round.Figure;
             foreach (int pid in new[] { 0, 1 })
                 for (int y = 0; y < fig.Height; y++)
@@ -491,7 +520,7 @@ namespace RobaColores.Game.Tests
         public void GameEndsWhenEveryoneButOneIsDisqualified()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 0, 0));
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             // J1 se queda sin color 1: tras este minijuego ya no puede construir ninguna figura del catalogo.
             s.GetPlayer(1).Inventory.TryTake(1, 200);
             s.PressFinish(0);
@@ -504,7 +533,7 @@ namespace RobaColores.Game.Tests
         public void EveryoneDisqualifiedAtOnceHasNoWinner()
         {
             var s = Fixtures.Session(new QueueRandom(2, 6, 0, 0));
-            s.StartGame(); s.RollMoveDie();
+            Fixtures.StartAndRollOrder(s); s.RollMoveDie();
             s.GetPlayer(0).Inventory.TryTake(1, 200); s.GetPlayer(1).Inventory.TryTake(1, 200);
             s.PressFinish(0);
             Assert.AreEqual(OutcomeKind.NoWinner, s.Outcome.Kind);

@@ -56,7 +56,7 @@ namespace RobaColores.Game.Presentation
 
             // Cabecera: referencia, categoria, temporizador global y ayuda.
             var refBox = UiKit.Panel(root, "Referencia", UiKit.ParchmentDark);
-            UiKit.Place(refBox.rectTransform, 0, 1, 0, 1, 20, -215, 210, -25);
+            UiKit.Place(refBox.rectTransform, 0, 1, 0, 1, 20, -295, 300, -25);
             var refTitle = UiKit.Label(refBox.transform, "REFERENCIA", 18, TextAnchor.MiddleCenter, UiKit.Ink);
             UiKit.Place(refTitle.rectTransform, 0, 1, 1, 1, 0, -24, 0, 0);
             var refGrid = UiKit.Rect(refBox.transform, "Cuadricula");
@@ -68,9 +68,11 @@ namespace RobaColores.Game.Presentation
                     refCells[y * round.Figure.Width + x].color = CellColor(round.Figure.CellAt(x, y));
 
             var cat = UiKit.Label(root, "Categoría: " + GameText.CategoryName(round.Category), 32, TextAnchor.MiddleLeft, UiKit.Gold);
-            UiKit.Place(cat.rectTransform, 0, 1, 0, 1, 230, -70, 830, -22);
+            UiKit.Place(cat.rectTransform, 0, 1, 0, 1, 320, -70, 980, -22);
             timerText = UiKit.Label(root, "", 70, TextAnchor.MiddleLeft, UiKit.Parchment);
-            UiKit.Place(timerText.rectTransform, 0, 1, 0, 1, 230, -170, 530, -80);
+            UiKit.Place(timerText.rectTransform, 0, 1, 0, 1, 320, -170, 530, -80);
+            var simultaneous = UiKit.Label(root, "MINIJUEGO SIMULTÁNEO · TODOS JUEGAN A LA VEZ", 22, TextAnchor.MiddleRight, UiKit.Gold);
+            UiKit.Place(simultaneous.rectTransform, 0, 1, 1, 1, 990, -78, -24, -28);
             var hint = UiKit.Label(root, "Clic izquierdo: pintar con el color elegido. Clic derecho (o la X): borrar.\nCualquier jugador puede pulsar TERMINAR: el desafío acaba para todos.", 17, TextAnchor.UpperLeft, UiKit.Parchment);
             UiKit.Place(hint.rectTransform, 1, 1, 1, 1, -420, -190, -20, -85);
 

@@ -54,5 +54,11 @@ namespace RobaColores.Game.Tests
             for (int i = 0; i < players; i++) s.AddPlayer("J" + i, i);
             return s;
         }
+
+        public static void StartAndRollOrder(GameSession session)
+        {
+            session.StartGame();
+            while (session.Phase == GamePhase.AwaitingOrderRoll) session.RollOrderDie();
+        }
     }
 }

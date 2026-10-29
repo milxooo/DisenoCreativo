@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Pirata_Amarillo
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.CharacterAsset
   id: pirata_amarillo
-  displayName: Pirata Amarillo
-  description: Personaje provisional. Se sustituye por el definitivo en este mismo
-    asset.
+  displayName: Arquera del Mar
+  description: Personaje ilustrado con su retrato y modelo de tablero.
   mainColor: {r: 0.9490196, g: 0.827451, b: 0.20784314, a: 1}
   portrait: {fileID: 21300000, guid: d537b78f0e90f1540b76eb4a9433107d, type: 3}
   pawnPrefab: {fileID: 2425524737213567486, guid: 61f76995feec3e949a3af40e4f16bbed, type: 3}

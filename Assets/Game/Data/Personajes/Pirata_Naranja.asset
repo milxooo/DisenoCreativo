@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: Pirata_Naranja
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.CharacterAsset
   id: pirata_naranja
-  displayName: Pirata Naranja
-  description: Personaje provisional. Se sustituye por el definitivo en este mismo
-    asset.
+  displayName: Pirata Pixel
+  description: Personaje ilustrado con su retrato y modelo de tablero.
   mainColor: {r: 0.9411765, g: 0.5411765, b: 0.14117648, a: 1}
   portrait: {fileID: 21300000, guid: 5723d09765dddc246b5b0c965b6a4728, type: 3}
   pawnPrefab: {fileID: 8779940786436252764, guid: 808bcdf71ebe45f46b3829c87d37492b, type: 3}

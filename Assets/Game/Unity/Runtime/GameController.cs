@@ -32,14 +32,17 @@ namespace RobaColores.Game.Presentation
         readonly List<Color> colors = new List<Color>();
         readonly List<string> characterNames = new List<string>();
         readonly Dictionary<int, Transform> pawns = new Dictionary<int, Transform>();
+        readonly List<Transform> billboards = new List<Transform>();
+        readonly List<Material> artworkMaterials = new List<Material>();
         readonly Queue<GameEvent> moves = new Queue<GameEvent>();
         readonly List<string> log = new List<string>();
         readonly List<GameObject> markers = new List<GameObject>();
 
         bool busy;
-        bool orderPending = true;
+        bool orderPending;
         bool pendingResults;
         string lastRoll = "";
+        string lastOrderRoll = "";
 
         // Interfaz
         RectTransform modalLayer, actionBar, pathPanel;
@@ -93,6 +96,7 @@ namespace RobaColores.Game.Presentation
                 var pawn = Instantiate(character.pawnPrefab).transform;
                 pawn.name = "Peon_" + playerName;
                 pawn.localScale = Vector3.one * 1.6f;   // legible a la escala del mapa
+                ConfigurePawnArtwork(pawn, setup[i].characterIndex);
                 pawns[i] = pawn;
             }
             int rows = session.Players.Count;
@@ -113,6 +117,8 @@ namespace RobaColores.Game.Presentation
         }
 
         void RollDice() { Act(() => session.RollMoveDie()); }
+
+        void RollOrderDie() { Act(() => session.RollOrderDie()); }
 
         void ChoosePath(int tileId) { ClearMarkers(); Act(() => session.ChoosePath(tileId)); }
 
@@ -135,6 +141,45 @@ namespace RobaColores.Game.Presentation
             }
         }
 
+        void LateUpdate()
+        {
+            var camera = Camera.main;
+            if (camera == null) return;
+            foreach (var billboard in billboards)
+            {
+                if (billboard != null)
+                    billboard.rotation = Quaternion.LookRotation(camera.transform.position - billboard.position, Vector3.up);
+            }
+        }
+
+        void ConfigurePawnArtwork(Transform pawn, int characterIndex)
+        {
+            var texture = CharacterPortraitLibrary.GetCharacterArtwork(characterIndex);
+            var sharedMaterial = CharacterPortraitLibrary.GetArtworkMaterial();
+            if (texture == null || sharedMaterial == null) return;
+
+            foreach (var renderer in pawn.GetComponentsInChildren<Renderer>(true)) renderer.enabled = false;
+
+            var visual = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            visual.name = "Arte del personaje";
+            visual.transform.SetParent(pawn, false);
+            visual.transform.localPosition = new Vector3(0f, 0.65f, 0f);
+            visual.transform.localScale = new Vector3(1.2f, 1.3f, 1f);
+            visual.GetComponent<Collider>().enabled = false;
+            var material = new Material(sharedMaterial);
+            material.mainTexture = texture;
+            material.SetVector("_ArtworkUVRect", new Vector4(0.15f, 0f, 0.7f, 1f));
+            artworkMaterials.Add(material);
+            visual.GetComponent<MeshRenderer>().sharedMaterial = material;
+            billboards.Add(visual.transform);
+        }
+
+        void OnDestroy()
+        {
+            foreach (var material in artworkMaterials)
+                if (material != null) Destroy(material);
+        }
+
         void AutopilotStep()
         {
             autopilotTimer -= Time.deltaTime;
@@ -144,6 +189,7 @@ namespace RobaColores.Game.Presentation
             if (pendingResults) { pendingResults = false; autopilotTimer = 2.5f; Refresh(); return; }
             switch (session.Phase)
             {
+                case GamePhase.AwaitingOrderRoll: RollOrderDie(); break;
                 case GamePhase.AwaitingMoveRoll: RollDice(); break;
                 case GamePhase.AwaitingPathChoice:
                     if (!autopilotLingered) { autopilotLingered = true; autopilotTimer = 2.5f; break; }   // deja ver las opciones
@@ -174,6 +220,9 @@ namespace RobaColores.Game.Presentation
         void OnEvent(GameEvent e)
         {
             if (e.Type == GameEventType.PlayerMoved) { moves.Enqueue(e); return; }
+            if (e.Type == GameEventType.OrderDetermined) orderPending = true;
+            if (e.Type == GameEventType.OrderRollCompleted)
+                lastOrderRoll = names[e.PlayerId] + " sacó un " + e.A + ".";
             if (e.Type == GameEventType.MinigameFinished) pendingResults = true;
             if (e.Type == GameEventType.MoveRolled)
                 lastRoll = names[e.PlayerId] + " " + GameText.FaceText(new MoveFace((MoveFaceKind)e.A, e.B)) + ".";
@@ -227,7 +276,7 @@ namespace RobaColores.Game.Presentation
 
         Vector3 PawnPosition(int playerId, int tileId)
         {
-            var offset = new Vector3((playerId % 3 - 1) * 0.5f, 0f, (playerId / 3 - 0.5f) * 0.55f);   // hasta 6 peones en la misma casilla
+            var offset = new Vector3((playerId % 2 == 0 ? -0.35f : 0.35f), 0f, (playerId / 2 == 0 ? -0.3f : 0.3f));
             return board.PositionOf(tileId) + offset;
         }
 
@@ -273,6 +322,7 @@ namespace RobaColores.Game.Presentation
             if (session.Phase != GamePhase.MinigameRunning && minigame != null) { minigame.Close(); minigame = null; }
 
             if (session.Phase == GamePhase.GameOver) { ShowGameOver(); return; }
+            if (session.Phase == GamePhase.AwaitingOrderRoll) { ShowOrderRoll(); return; }
             if (orderPending) { ShowOrder(); return; }
             if (pendingResults) { ShowResults(); return; }
 
@@ -305,13 +355,19 @@ namespace RobaColores.Game.Presentation
             foreach (var p in session.Players)
             {
                 string hex = ColorUtility.ToHtmlStringRGB(colors[p.Id]);
-                bool current = session.Phase != GamePhase.GameOver && session.CurrentPlayer != null && session.CurrentPlayer.Id == p.Id;
+                bool current = session.Phase == GamePhase.AwaitingOrderRoll
+                    ? session.CurrentOrderPlayerId == p.Id
+                    : session.Phase != GamePhase.MinigameRunning && session.Phase != GamePhase.GameOver &&
+                      session.CurrentPlayer != null && session.CurrentPlayer.Id == p.Id;
                 string status = p.Disqualified ? " DESCALIFICADO" : p.SkipNextTurn ? " (pierde turno)" : p.PendingTimePenalty > 0f ? " (penalización)" : "";
                 sb.AppendLine((current ? "> " : "   ") + "<color=#" + hex + ">" + p.Name + "</color> " + characterNames[p.Id] + "  " + p.Inventory.Total + " u." + status);
             }
             playersText.text = sb.ToString();
             logText.text = string.Join("\n", log.ToArray()) + (lastRoll.Length > 0 && session.Phase == GamePhase.AwaitingMoveRoll ? "" : "");
             if (session.Phase == GamePhase.GameOver) banner.text = "Fin de la partida";
+            else if (session.Phase == GamePhase.MinigameRunning) banner.text = "Minijuego simultáneo: todos juegan";
+            else if (session.Phase == GamePhase.AwaitingOrderRoll && session.CurrentOrderPlayerId.HasValue)
+                banner.text = "Tirada de salida: turno de " + names[session.CurrentOrderPlayerId.Value];
             else if (session.CurrentPlayer != null) banner.text = "Turno de " + session.CurrentPlayer.Name;
         }
 
@@ -377,6 +433,36 @@ namespace RobaColores.Game.Presentation
             UiKit.Place(text.rectTransform, 0.5f, 0, 1, 1, 10, 90, -24, -70);
             var go = UiKit.MakeButton(box, "COMENZAR", UiKit.WoodLight, 28, () => { orderPending = false; Refresh(); });
             UiKit.Place((RectTransform)go.transform, 0.5f, 0, 0.5f, 0, -110, 16, 110, 64);
+        }
+
+        void ShowOrderRoll()
+        {
+            var box = Modal("¿Quién comienza?", 900, 640);
+            int playerId = session.CurrentOrderPlayerId.Value;
+            var prompt = UiKit.Label(box,
+                "Turno de tirada: " + names[playerId] + "\n" + characterNames[playerId],
+                34, TextAnchor.MiddleCenter, colors[playerId]);
+            UiKit.Place(prompt.rectTransform, 0, 1, 1, 1, 24, -152, -24, -72);
+
+            var history = new StringBuilder("Tiradas realizadas\n");
+            for (int round = 0; round < session.OrderResult.Rounds.Count; round++)
+            {
+                var rolls = session.OrderResult.Rounds[round];
+                if (rolls.Count == 0) continue;
+                history.AppendLine(round == 0 ? "Ronda inicial:" : "Desempate:");
+                var ids = new List<int>(rolls.Keys);
+                ids.Sort();
+                foreach (var id in ids) history.AppendLine("  " + names[id] + ": " + rolls[id]);
+            }
+            history.AppendLine();
+            history.AppendLine("Lancen en orden. Si hay empate, repiten solo los empatados.");
+            var text = UiKit.Label(box, history.ToString(), 22, TextAnchor.UpperLeft, UiKit.Ink);
+            UiKit.Place(text.rectTransform, 0, 0, 0.62f, 1, 28, 100, -12, -170);
+
+            var die = UiKit.Label(box, string.IsNullOrEmpty(lastOrderRoll) ? "?" : lastOrderRoll, 34, TextAnchor.MiddleCenter, UiKit.Wood);
+            UiKit.Place(die.rectTransform, 0.64f, 0, 1, 1, 12, 118, -24, -180);
+            var roll = UiKit.MakeButton(box, "LANZAR DADO", UiKit.WoodLight, 30, RollOrderDie);
+            UiKit.Place((RectTransform)roll.transform, 0.5f, 0, 0.5f, 0, -175, 20, 175, 80);
         }
 
         void ShowResults()
