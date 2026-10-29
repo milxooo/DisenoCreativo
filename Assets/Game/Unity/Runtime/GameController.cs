@@ -18,6 +18,8 @@ namespace RobaColores.Game.Presentation
         [SerializeField] GameContent content;
         [Tooltip("Solo pruebas: juega la partida sola para comprobar que el flujo completo funciona.")]
         [SerializeField] bool autopilot;
+        [Tooltip("Solo pruebas: permite abrir Partida directamente (sin pasar por el menu), con jugadores y personajes por defecto.")]
+        [SerializeField] bool allowDirectStart;
 
         float autopilotTimer;
         bool autopilotLingered;
@@ -54,6 +56,13 @@ namespace RobaColores.Game.Presentation
         void Awake()
         {
             if (content == null) { Debug.LogError("GameController necesita el asset GameContent."); enabled = false; return; }
+            // Si se pulsa Play estando en esta escena sin haber elegido personajes en el menu, se vuelve al menu.
+            if (!SessionSetup.HasSelection && !allowDirectStart)
+            {
+                enabled = false;
+                SceneManager.LoadScene("Menu");
+                return;
+            }
             UiKit.Font = content.uiFont;
             board = FindFirstObjectByType<MapBoard>();
             if (board == null) { Debug.LogError("No hay MapBoard en la escena."); enabled = false; return; }
