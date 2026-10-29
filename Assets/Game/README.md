@@ -1,3 +1,4 @@
+
 # Roba Colores - mecánicas del juego
 
 Juego de tablero estilo Mario Party sobre el Mapa A: se tira un dado, se avanza por casillas de color, cada casilla lanza un minijuego de Pixel Art para todos, el ganador roba una fila de píxeles a cada oponente y los jugadores sin recursos quedan descalificados.
