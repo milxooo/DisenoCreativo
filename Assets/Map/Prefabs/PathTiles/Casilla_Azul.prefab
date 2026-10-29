@@ -105,3 +105,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Map.PathTile
   color: 4
   index: 0
+  tileId: -1
+  nodeName: 
+  isStart: 0
+  isFinish: 0
+  triggersMinigame: 1
+  difficulty: 0
+  next: []
