@@ -102,34 +102,41 @@ namespace RobaColores.Game.Tests
             Assert.IsFalse(s.IsAvailable(0, 99));
         }
 
-        [Test] public void PlayerCountCanChangeFromTwoToFourAndCannotFallBelowTwo()
+        [Test] public void SixSlotsAreAcceptedAndSevenAreRejected()
+        {
+            var s = new CharacterSelection(6, 6, false);
+            Assert.AreEqual(6, s.SlotCount);
+            Assert.Throws<ArgumentException>(() => new CharacterSelection(7, 7, false));
+        }
+
+        [Test] public void PlayerCountCanChangeFromTwoToSixAndCannotLeaveThatRange()
         {
             var s = new CharacterSelection(2, 6, false);
-            s.SetSlotCount(4);
-            Assert.AreEqual(4, s.SlotCount);
+            s.SetSlotCount(6);
+            Assert.AreEqual(6, s.SlotCount);
             s.SetSlotCount(2);
             Assert.AreEqual(2, s.SlotCount);
             Assert.Throws<ArgumentOutOfRangeException>(() => s.SetSlotCount(1));
-            Assert.Throws<ArgumentOutOfRangeException>(() => s.SetSlotCount(5));
+            Assert.Throws<ArgumentOutOfRangeException>(() => s.SetSlotCount(7));
         }
     }
 
     public class FourPlayerSessionTests
     {
-        [Test] public void SessionSupportsFourPlayersWithFourCharacters()
+        [Test] public void SessionSupportsSixPlayersWithSixCharacters()
         {
-            var s = Fixtures.Session(new QueueRandom(1, 2, 3, 4, 0, 0), 4);
-            Assert.AreEqual(4, s.Players.Count);
+            var s = Fixtures.Session(new QueueRandom(1, 2, 3, 4, 5, 6), 6);
+            Assert.AreEqual(6, s.Players.Count);
             Fixtures.StartAndRollOrder(s);
-            Assert.AreEqual(4, s.TurnOrder.Count);
-            CollectionAssert.AreEqual(new[] { 3, 2, 1, 0 }, new List<int>(s.TurnOrder), "orden por tirada descendente");
+            Assert.AreEqual(6, s.TurnOrder.Count);
+            CollectionAssert.AreEqual(new[] { 5, 4, 3, 2, 1, 0 }, new List<int>(s.TurnOrder), "orden por tirada descendente");
             foreach (var p in s.Players) Assert.AreEqual(s.Board.StartId, p.TileId);
         }
 
-        [Test] public void FifthPlayerIsRejected()
+        [Test] public void SeventhPlayerIsRejected()
         {
-            var s = Fixtures.Session(new QueueRandom(1), 4);
-            Assert.Throws<InvalidOperationException>(() => s.AddPlayer("J5", 4));
+            var s = Fixtures.Session(new QueueRandom(1), 6);
+            Assert.Throws<InvalidOperationException>(() => s.AddPlayer("J7", 6));
         }
 
         [Test] public void RepeatedCharacterIsRejectedUnlessConfigured()

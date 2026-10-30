@@ -17,7 +17,7 @@ namespace RobaColores.Game.Presentation
     public class GameSettingsAsset : ScriptableObject
     {
         public int minPlayers = 2;
-        public int maxPlayers = 4;
+        public int maxPlayers = 6;
         [Tooltip("PROVISIONAL: si es false, cada jugador debe elegir un personaje distinto. Regla aun sin decidir.")]
         public bool allowRepeatedCharacters;
         public int initialUnitsPerColor = 200;

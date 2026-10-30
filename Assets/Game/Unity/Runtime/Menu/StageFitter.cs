@@ -6,7 +6,7 @@ namespace RobaColores.Game.Presentation
     // Asi la composicion del boceto se conserva en cualquier resolucion y nada se corta ni se superpone.
     public sealed class StageFitter : MonoBehaviour
     {
-        public Vector2 design = new Vector2(1393f, 1080f);
+        public Vector2 design = new Vector2(1920f, 1080f);
 
         public static float ScaleFor(Vector2 parentSize, Vector2 design)
         {

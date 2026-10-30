@@ -70,7 +70,7 @@ namespace RobaColores.Game.EditorTools
             EditorUtility.SetDirty(palette);
 
             var settings = Load<GameSettingsAsset>(Root + "/GameSettings.asset");
-            settings.minPlayers = 2; settings.maxPlayers = 4; settings.allowRepeatedCharacters = false;
+            settings.minPlayers = 2; settings.maxPlayers = 6; settings.allowRepeatedCharacters = false;
             settings.moveDieFaces = new List<MoveFaceData>
             {
                 new MoveFaceData { kind = MoveFaceKind.Advance, steps = 1 }, new MoveFaceData { kind = MoveFaceKind.Advance, steps = 2 },

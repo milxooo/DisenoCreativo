@@ -17,8 +17,7 @@ namespace RobaColores.Game
         {
             if (scene.name == "SampleScene")
             {
-                if (Object.FindAnyObjectByType<MainMenuController>() == null)
-                    new GameObject("Roba Colores - Menu").AddComponent<MainMenuController>();
+                SceneManager.LoadScene("Menu");
                 return;
             }
 

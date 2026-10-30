@@ -25,8 +25,8 @@ namespace RobaColores.Game.Core
 
         public CharacterSelection(int slotCount, int characterCount, bool allowRepeats)
         {
-            if (slotCount < 2 || slotCount > 4 || characterCount <= 0)
-                throw new ArgumentException("La selección requiere de dos a cuatro jugadores y al menos un personaje.");
+            if (slotCount < 2 || slotCount > 6 || characterCount <= 0)
+                throw new ArgumentException("La selección requiere de dos a seis jugadores y al menos un personaje.");
             this.characterCount = characterCount;
             AllowRepeats = allowRepeats;
             slots = new List<PlayerSlot>(slotCount);
@@ -37,7 +37,7 @@ namespace RobaColores.Game.Core
 
         public void SetSlotCount(int count)
         {
-            if (count < 2 || count > 4) throw new ArgumentOutOfRangeException(nameof(count), "La partida admite de dos a cuatro jugadores.");
+            if (count < 2 || count > 6) throw new ArgumentOutOfRangeException(nameof(count), "La partida admite de dos a seis jugadores.");
             while (slots.Count > count) slots.RemoveAt(slots.Count - 1);
             while (slots.Count < count) slots.Add(new PlayerSlot { Number = slots.Count + 1 });
         }

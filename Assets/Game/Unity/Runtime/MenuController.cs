@@ -8,9 +8,7 @@ using static RobaColores.Game.Presentation.MenuWidgets;
 
 namespace RobaColores.Game.Presentation
 {
-    // Menu principal segun el boceto: pergamino con bordes quemados, titulo con kraken y pirata a la izquierda,
-    // botones JUGAR / OPCIONES / PERSONALIZAR a la derecha, SALIDA abajo a la izquierda y la presentacion de los dados.
-    // Toda la composicion usa un escenario de 1393 x 1080 (proporcion del boceto) que se escala para caber en cualquier pantalla.
+    // Pantalla inicial 16:9; las pantallas secundarias conservan su composicion original de 1393 x 1080.
     public sealed class MenuController : MonoBehaviour
     {
         [SerializeField] GameContent content;
@@ -21,8 +19,8 @@ namespace RobaColores.Game.Presentation
         [Tooltip("Solo pruebas: pulsa COMENZAR automaticamente un par de segundos despues.")]
         [SerializeField] bool debugAutoStart;
 
-        const float DesignW = 1393f, DesignH = 1080f;
-        const float K = 1080f / 469f;                 // pixeles de diseno por pixel del boceto
+        const float DesignW = 1920f, DesignH = 1080f;
+        const float LegacyDesignW = 1393f;
         const string GameScene = "Partida";
 
         RectTransform stage;
@@ -40,14 +38,17 @@ namespace RobaColores.Game.Presentation
         readonly RectTransform[] buttonRects = new RectTransform[3];
         readonly CanvasGroup[] buttonCanvases = new CanvasGroup[3];
         RectTransform diceRect;
+        bool usesReferenceMain;
+        Button repeatButton;
+        Text repeatValueText;
 
         void Awake()
         {
             if (content == null) { Debug.LogError("MenuController necesita el asset GameContent."); enabled = false; return; }
-            if (content.settings == null || content.settings.minPlayers < 2 || content.settings.maxPlayers > 4 ||
+            if (content.settings == null || content.settings.minPlayers < 2 || content.settings.maxPlayers > 6 ||
                 content.settings.minPlayers > content.settings.maxPlayers)
             {
-                Debug.LogError("GameSettings debe permitir una cantidad de entre dos y cuatro jugadores.", this);
+                Debug.LogError("GameSettings debe permitir una cantidad de entre dos y seis jugadores.", this);
                 enabled = false;
                 return;
             }
@@ -57,6 +58,7 @@ namespace RobaColores.Game.Presentation
             SessionSetup.Clear();
 
             var canvas = UiKit.CreateCanvas("MenuCanvas", 0, new Vector2(1920, 1080));
+            canvas.GetComponent<CanvasScaler>().matchWidthOrHeight = 1f;
             var wood = UiKit.Panel(canvas.transform, "Fondo", new Color32(0x3B, 0x24, 0x10, 255));
             wood.sprite = MenuSprites.WoodWall();
             wood.type = Image.Type.Simple;
@@ -68,11 +70,14 @@ namespace RobaColores.Game.Presentation
             stage.anchoredPosition = Vector2.zero;
             stage.gameObject.AddComponent<StageFitter>();
 
-            var shadow = UiKit.Panel(stage, "Sombra", new Color(0f, 0f, 0f, 0.46f));
+            var legacyBackdrop = UiKit.Rect(stage, "FondoPantallasSecundarias");
+            legacyBackdrop.anchorMin = legacyBackdrop.anchorMax = new Vector2(0.5f, 0.5f);
+            legacyBackdrop.sizeDelta = new Vector2(LegacyDesignW, DesignH);
+            var shadow = UiKit.Panel(legacyBackdrop, "Sombra", new Color(0f, 0f, 0f, 0.46f));
             shadow.sprite = MenuSprites.Parchment();
             shadow.raycastTarget = false;
             UiKit.Place(shadow.rectTransform, 0, 0, 1, 1, -4, -26, 24, 4);
-            var paper = UiKit.Panel(stage, "Pergamino", Color.white);
+            var paper = UiKit.Panel(legacyBackdrop, "Pergamino", Color.white);
             paper.sprite = MenuSprites.Parchment();
             paper.raycastTarget = false;
             UiKit.Stretch(paper.rectTransform);
@@ -123,13 +128,18 @@ namespace RobaColores.Game.Presentation
 
         // ---------------- Estructura ----------------
 
-        RectTransform Group(string name, out CanvasGroup group)
+        RectTransform Group(string name, out CanvasGroup group, bool useLegacyLayout = false)
         {
             var rt = UiKit.Rect(stage, name);
             UiKit.Stretch(rt);
             group = rt.gameObject.AddComponent<CanvasGroup>();
             rt.gameObject.SetActive(false);
-            return rt;
+            if (!useLegacyLayout) return rt;
+
+            var contentRoot = UiKit.Rect(rt, "Contenido");
+            contentRoot.anchorMin = contentRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            contentRoot.sizeDelta = new Vector2(LegacyDesignW, DesignH);
+            return contentRoot;
         }
 
         // Transicion entre pantallas: la actual se desvanece, la nueva aparece subiendo un poco. No bloquea la navegacion.
@@ -170,8 +180,25 @@ namespace RobaColores.Game.Presentation
 
         void BuildMain()
         {
-            var g = Group("Principal", out mainGroup);
             var art = content.menuArt;
+            bool useReferenceMain = art != null && art.mainMenuBackground != null;
+            var g = Group("Principal", out mainGroup, !useReferenceMain);
+            if (useReferenceMain)
+            {
+                usesReferenceMain = true;
+                var backgroundObject = new GameObject("DisenoPantallaInicial", typeof(RectTransform), typeof(RawImage));
+                backgroundObject.transform.SetParent(g, false);
+                var background = backgroundObject.GetComponent<RawImage>();
+                background.texture = art.mainMenuBackground;
+                background.raycastTarget = false;
+                Abs(background.rectTransform, 0, 0, DesignW, DesignH);
+
+                AddArtworkButton(g, "Jugar", 1310, 718, 330, 90, () => GoTo(selectionGroup));
+                AddArtworkButton(g, "Opciones", 1310, 615, 330, 90, () => GoTo(optionsGroup));
+                AddArtworkButton(g, "Personalizar", 1310, 510, 330, 90, () => GoTo(galleryGroup));
+                AddArtworkButton(g, "Salir", 315, 18, 280, 95, Quit);
+                return;
+            }
 
             titleHolder = UiKit.Rect(g, "TituloContenedor");
             UiKit.Stretch(titleHolder);
@@ -262,8 +289,25 @@ namespace RobaColores.Game.Presentation
             diceRect.anchoredPosition = new Vector2(1002f, 20f);
         }
 
+        static void AddArtworkButton(Transform parent, string name, float x, float y, float width, float height, Action action)
+        {
+            var image = UiKit.Panel(parent, name, new Color(1f, 1f, 1f, 0f));
+            var button = image.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => action());
+            Abs(image.rectTransform, x, y, width, height);
+        }
+
         IEnumerator EnterMain()
         {
+            if (usesReferenceMain)
+            {
+                mainGroup.alpha = 0f;
+                yield return UiAnim.Fade(mainGroup, 0f, 1f, 0.4f);
+                yield break;
+            }
+
             titleCanvas.alpha = 0f;
             foreach (var cg in buttonCanvases) cg.alpha = 0f;
             exitCanvas.alpha = 0f;
@@ -310,7 +354,8 @@ namespace RobaColores.Game.Presentation
 
         void BuildSelection()
         {
-            var g = Group("Seleccion", out selectionGroup);
+            bool useLegacyLayout = content.menuArt == null || content.menuArt.playerSelectionBackground == null;
+            var g = Group("Seleccion", out selectionGroup, useLegacyLayout);
             selectionView = CharacterSelectionView.Create(g, content, selection, RequestStart,
                 () => GoTo(mainGroup, () => { StartCoroutine(EnterMain()); }));
         }
@@ -363,7 +408,7 @@ namespace RobaColores.Game.Presentation
 
         void BuildOptions()
         {
-            var g = Group("Opciones", out optionsGroup);
+            var g = Group("Opciones", out optionsGroup, true);
             AddWoodBackdrop(g);
             Header(g, "OPCIONES");
             var s = content.settings;
@@ -382,52 +427,92 @@ namespace RobaColores.Game.Presentation
             Abs(playersTitle.rectTransform, 18, 45, 260, 34);
             var playersValue = UiKit.Label(players.transform, s.minPlayers + " - " + s.maxPlayers, 34, TextAnchor.MiddleRight, UiKit.Wood);
             Abs(playersValue.rectTransform, 280, 45, 185, 34);
-            var playersHint = UiKit.Label(players.transform, "Elige la cantidad antes de jugar", 18, TextAnchor.MiddleLeft, UiKit.Wood);
+            var playersHint = UiKit.Label(players.transform, "Se elige en la pantalla de selección", 18, TextAnchor.MiddleLeft, UiKit.Wood);
             Abs(playersHint.rectTransform, 18, 12, 450, 28);
 
             var repeat = FramePanel(sheet.transform, new Color32(221, 202, 158, 255));
             Abs(repeat.rectTransform, 594, 434, 500, 94);
             var repeatTitle = UiKit.Label(repeat.transform, "REPETIR PERSONAJES", 23, TextAnchor.MiddleLeft, UiKit.Ink);
             Abs(repeatTitle.rectTransform, 18, 45, 315, 34);
-            var repeatValue = FramePanel(repeat.transform, s.allowRepeatedCharacters
-                ? new Color32(63, 117, 59, 255)
-                : new Color32(118, 52, 43, 255));
+            var repeatValue = FramePanel(repeat.transform, RepeatColor());
             Abs(repeatValue.rectTransform, 350, 43, 126, 38);
-            var repeatText = UiKit.Label(repeatValue.transform, s.allowRepeatedCharacters ? "SÍ" : "NO", 22, TextAnchor.MiddleCenter, Color.white);
-            UiKit.Stretch(repeatText.rectTransform);
-            var repeatHint = UiKit.Label(repeat.transform, "Regla actual de la partida", 18, TextAnchor.MiddleLeft, UiKit.Wood);
+            repeatValueText = UiKit.Label(repeatValue.transform, s.allowRepeatedCharacters ? "SÍ" : "NO", 22, TextAnchor.MiddleCenter, Color.white);
+            UiKit.Stretch(repeatValueText.rectTransform);
+            repeatButton = repeatValue.gameObject.AddComponent<Button>();
+            repeatButton.transition = Selectable.Transition.None;
+            repeatButton.targetGraphic = repeatValue;
+            repeatButton.onClick.AddListener(ToggleRepeats);
+            var repeatHint = UiKit.Label(repeat.transform, "Pulsa para cambiar la regla", 18, TextAnchor.MiddleLeft, UiKit.Wood);
             Abs(repeatHint.rectTransform, 18, 12, 450, 28);
 
-            AddOptionSlider(sheet.rectTransform, "DURACIÓN DEL MINIJUEGO", s.minigameSeconds + " s",
-                Mathf.Clamp01(s.minigameSeconds / 180f), 306f);
-            AddOptionSlider(sheet.rectTransform, "PENALIZACIÓN DE TIEMPO (CARA 6)", s.timePenaltySeconds + " s",
-                Mathf.Clamp01(s.timePenaltySeconds / 30f), 164f);
-            var note = UiKit.Label(sheet.transform, "Los ajustes y valores de juego se configuran en GameSettings.", 19, TextAnchor.MiddleCenter, UiKit.Wood);
+            AddOptionSlider(sheet.rectTransform, "DURACIÓN DEL MINIJUEGO", s.minigameSeconds, 30f, 180f, 10f,
+                306f, v => s.minigameSeconds = v);
+            AddOptionSlider(sheet.rectTransform, "PENALIZACIÓN DE TIEMPO (CARA 6)", s.timePenaltySeconds, 0f, 30f, 5f,
+                164f, v => s.timePenaltySeconds = v);
+            var note = UiKit.Label(sheet.transform, "Los cambios se aplican a la siguiente partida.", 19, TextAnchor.MiddleCenter, UiKit.Wood);
             Abs(note.rectTransform, 72, 30, 1020, 35);
             BackButton(g);
         }
 
-        void AddOptionSlider(RectTransform parent, string label, string value, float progress, float y)
+        Color RepeatColor()
+        {
+            return content.settings.allowRepeatedCharacters
+                ? new Color32(63, 117, 59, 255)
+                : new Color32(118, 52, 43, 255);
+        }
+
+        void ToggleRepeats()
+        {
+            var settings = content.settings;
+            settings.allowRepeatedCharacters = !settings.allowRepeatedCharacters;
+            selection.AllowRepeats = settings.allowRepeatedCharacters;
+            var image = repeatButton.GetComponent<Image>();
+            if (image != null) image.color = RepeatColor();
+            if (repeatValueText != null) repeatValueText.text = settings.allowRepeatedCharacters ? "SÍ" : "NO";
+            if (selectionView != null) selectionView.Refresh();
+        }
+
+        void AddOptionSlider(RectTransform parent, string label, float value, float min, float max, float step,
+            float y, Action<float> setValue)
         {
             var title = UiKit.Label(parent, label, 25, TextAnchor.MiddleLeft, UiKit.Ink);
             Abs(title.rectTransform, 74, y + 52, 890, 36);
-            var number = UiKit.Label(parent, value, 25, TextAnchor.MiddleRight, UiKit.Wood);
+            var number = UiKit.Label(parent, "", 25, TextAnchor.MiddleRight, UiKit.Wood);
             Abs(number.rectTransform, 980, y + 52, 135, 36);
 
             var track = FramePanel(parent, new Color32(84, 49, 30, 255));
             Abs(track.rectTransform, 74, y, 1040, 40);
             var fill = UiKit.Panel(track.transform, "Progreso", new Color32(186, 128, 65, 255));
-            UiKit.Place(fill.rectTransform, 0, 0, progress, 1, 5, 5, -2, -5);
-
             var marker = UiKit.Panel(parent, "Moneda", UiKit.Gold);
             marker.sprite = MenuSprites.Circle();
             marker.raycastTarget = false;
-            Abs(marker.rectTransform, 74 + 1040 * progress - 16, y - 5, 50, 50);
+
+            float current = value;
+            Action refresh = () =>
+            {
+                float progress = Mathf.InverseLerp(min, max, current);
+                number.text = current.ToString("0") + " s";
+                fill.gameObject.SetActive(progress > 0f);
+                UiKit.Place(fill.rectTransform, 0, 0, Mathf.Max(0.001f, progress), 1, 5, 5, -2, -5);
+                Abs(marker.rectTransform, 74 + 1040 * progress - 16, y - 5, 50, 50);
+            };
+            Action<float> nudge = delta =>
+            {
+                current = Mathf.Clamp(Mathf.Round((current + delta) / step) * step, min, max);
+                setValue(current);
+                refresh();
+            };
+            refresh();
+
+            var minus = FrameButton(parent, "−", 24, () => nudge(-step), new Color32(143, 87, 47, 255));
+            Abs((RectTransform)minus.transform, 24, y, 44, 40);
+            var plus = FrameButton(parent, "+", 24, () => nudge(step), new Color32(143, 87, 47, 255));
+            Abs((RectTransform)plus.transform, 1120, y, 44, 40);
         }
 
         void BuildGallery()
         {
-            var g = Group("Personajes", out galleryGroup);
+            var g = Group("Personajes", out galleryGroup, true);
             AddWoodBackdrop(g);
             Header(g, "PERSONAJES");
             int count = content.characters.Count;

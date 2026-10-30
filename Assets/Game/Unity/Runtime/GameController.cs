@@ -50,11 +50,10 @@ namespace RobaColores.Game.Presentation
         bool orderPending;
         bool pendingResults;
         string lastRoll = "";
-        string lastOrderRoll = "";
 
         // Interfaz
         RectTransform modalLayer, actionBar, pathPanel;
-        Text banner, playersText, logText;
+        Text banner, playersText, logTitle, logText;
         Image hudPanel, bannerPanel, logPanel;
         Button rollButton;
         MinigameView minigame;
@@ -79,6 +78,7 @@ namespace RobaColores.Game.Presentation
             if (board == null) { Debug.LogError("No hay MapBoard en la escena."); enabled = false; return; }
             UiKit.EnsureEventSystem();
             canvas = UiKit.CreateCanvas("GameCanvas", 10);
+            canvas.GetComponent<CanvasScaler>().matchWidthOrHeight = 1f;
             BuildHud();
         }
 
@@ -109,7 +109,8 @@ namespace RobaColores.Game.Presentation
             }
             int rows = session.Players.Count;
             BuildPlayerHud();
-            UiKit.Place(hudPanel.rectTransform, 0, 1, 0, 1, 8, -(30 + 51 * rows), 398, -8);
+            UiKit.Place(hudPanel.rectTransform, 0, 1, 0, 1, 18, -(70 + 52 * rows), 360, -12);
+            MenuWidgets.Abs(playersText.rectTransform, 12, 12 + 52 * rows, 318, 28);
             session.StartGame();
             foreach (var p in session.Players) pawns[p.Id].position = PawnPosition(p.Id, p.TileId);
             StartCoroutine(Settle());
@@ -231,8 +232,6 @@ namespace RobaColores.Game.Presentation
         {
             if (e.Type == GameEventType.PlayerMoved) { moves.Enqueue(e); return; }
             if (e.Type == GameEventType.OrderDetermined) orderPending = true;
-            if (e.Type == GameEventType.OrderRollCompleted)
-                lastOrderRoll = names[e.PlayerId] + " sacó un " + e.A + ".";
             if (e.Type == GameEventType.MinigameFinished) pendingResults = true;
             if (e.Type == GameEventType.MoveRolled)
                 lastRoll = names[e.PlayerId] + " " + GameText.FaceText(new MoveFace((MoveFaceKind)e.A, e.B)) + ".";
@@ -286,7 +285,9 @@ namespace RobaColores.Game.Presentation
 
         Vector3 PawnPosition(int playerId, int tileId)
         {
-            var offset = new Vector3((playerId % 2 == 0 ? -0.35f : 0.35f), 0f, (playerId / 2 == 0 ? -0.3f : 0.3f));
+            int count = session != null ? Mathf.Max(2, session.Players.Count) : 2;
+            float angle = (playerId / (float)count) * Mathf.PI * 2f;
+            var offset = new Vector3(Mathf.Cos(angle) * 0.42f, 0f, Mathf.Sin(angle) * 0.42f);
             return board.PositionOf(tileId) + offset;
         }
 
@@ -299,28 +300,35 @@ namespace RobaColores.Game.Presentation
             hudPanel.name = "ListaTripulacion";
             hudPanel.sprite = MenuSprites.Parchment();
             hudPanel.type = Image.Type.Simple;
-            UiKit.Place(hudPanel.rectTransform, 0, 1, 0, 1, 8, -240, 398, -8);
-            playersText = UiKit.Label(t, "TRIPULACIÓN", 22, TextAnchor.MiddleCenter, UiKit.Ink);
-            UiKit.Place(playersText.rectTransform, 0, 1, 0, 1, 16, -39, 390, -10);
+            UiKit.Place(hudPanel.rectTransform, 0, 1, 0, 1, 18, -310, 360, -12);
+            playersText = UiKit.Label(hudPanel.transform, "TRIPULACIÓN", 19, TextAnchor.MiddleCenter, UiKit.Ink);
+            MenuWidgets.Abs(playersText.rectTransform, 12, 116, 318, 28);
 
             bannerPanel = MenuWidgets.FramePanel(t, Color.white);
-            bannerPanel.sprite = MenuSprites.Parchment();
+            bannerPanel.sprite = MenuSprites.WoodWall();
             bannerPanel.type = Image.Type.Simple;
-            UiKit.Place(bannerPanel.rectTransform, 0.5f, 1, 0.5f, 1, -300, -76, 300, -6);
-            banner = UiKit.Label(t, "", 29, TextAnchor.MiddleCenter, UiKit.Ink);
-            UiKit.Place(banner.rectTransform, 0.5f, 1, 0.5f, 1, -276, -65, 276, -12);
+            UiKit.Place(bannerPanel.rectTransform, 0.67f, 1, 0.67f, 1, -230, -80, 230, -8);
+            banner = UiKit.Label(t, "", 23, TextAnchor.MiddleCenter, UiKit.Parchment);
+            UiKit.Place(banner.rectTransform, 0.67f, 1, 0.67f, 1, -212, -68, 212, -15);
 
             logPanel = MenuWidgets.FramePanel(t, Color.white);
             logPanel.sprite = MenuSprites.Parchment();
             logPanel.type = Image.Type.Simple;
-            UiKit.Place(logPanel.rectTransform, 1, 0, 1, 0, -440, 8, -8, 166);
-            logText = UiKit.Label(t, "", 17, TextAnchor.LowerLeft, UiKit.Ink);
-            UiKit.Place(logText.rectTransform, 1, 0, 1, 0, -415, 20, -28, 144);
+            UiKit.Place(logPanel.rectTransform, 1, 0, 1, 0, -360, 8, -12, 154);
+            logTitle = UiKit.Label(logPanel.transform, "BITÁCORA", 16, TextAnchor.MiddleCenter, UiKit.Wood);
+            MenuWidgets.Abs(logTitle.rectTransform, 16, 112, 312, 24);
+            logText = UiKit.Label(logPanel.transform, "", 16, TextAnchor.LowerLeft, UiKit.Ink);
+            MenuWidgets.Abs(logText.rectTransform, 16, 12, 312, 96);
 
             actionBar = UiKit.Rect(t, "Acciones");
-            UiKit.Place(actionBar, 0.5f, 0, 0.5f, 0, -230, 18, 230, 150);
+            UiKit.Place(actionBar, 0.5f, 0, 0.5f, 0, -270, 14, 270, 112);
+            var actionPanel = MenuWidgets.FramePanel(actionBar, Color.white);
+            actionPanel.sprite = MenuSprites.WoodWall();
+            actionPanel.type = Image.Type.Simple;
+            actionPanel.raycastTarget = false;
+            UiKit.Stretch(actionPanel.rectTransform);
             rollButton = MenuWidgets.FrameButton(actionBar, "TIRAR DADO", 26, RollDice, new Color32(137, 83, 42, 255));
-            UiKit.Place((RectTransform)rollButton.transform, 0, 0, 1, 0, 0, 0, 0, 64);
+            UiKit.Place((RectTransform)rollButton.transform, 0, 0, 1, 1, 12, 10, -12, -10);
 
             pathPanel = UiKit.Rect(t, "Caminos");
             UiKit.Place(pathPanel, 0.5f, 0, 0.5f, 0, -230, 18, 230, 260);
@@ -335,16 +343,16 @@ namespace RobaColores.Game.Presentation
             {
                 var row = new PlayerHudRow();
                 var rowRect = UiKit.Rect(hudPanel.transform, "Jugador" + player.Id);
-                MenuWidgets.Abs(rowRect, 15, 15 + (session.Players.Count - 1 - player.Id) * 49f, 360, 44);
+                MenuWidgets.Abs(rowRect, 12, 16 + (session.Players.Count - 1 - player.Id) * 52f, 318, 46);
                 row.background = MenuWidgets.FramePanel(rowRect, new Color32(235, 221, 181, 255));
                 UiKit.Stretch(row.background.rectTransform);
                 row.accent = UiKit.Panel(rowRect, "Acento", colors[player.Id]);
-                MenuWidgets.Abs(row.accent.rectTransform, 5, 6, 5, 32);
+                MenuWidgets.Abs(row.accent.rectTransform, 5, 6, 5, 34);
 
                 var portraitObject = new GameObject("Retrato", typeof(RectTransform), typeof(RawImage));
                 portraitObject.transform.SetParent(rowRect, false);
                 row.portrait = portraitObject.GetComponent<RawImage>();
-                MenuWidgets.Abs(row.portrait.rectTransform, 16, 3, 37, 38);
+                MenuWidgets.Abs(row.portrait.rectTransform, 14, 4, 36, 38);
                 var artwork = CharacterPortraitLibrary.GetCharacterArtwork(player.CharacterId);
                 if (artwork != null)
                 {
@@ -354,14 +362,14 @@ namespace RobaColores.Game.Presentation
                 }
                 row.portrait.raycastTarget = false;
 
-                row.details = UiKit.Label(rowRect, "", 16, TextAnchor.MiddleLeft, UiKit.Ink);
-                MenuWidgets.Abs(row.details.rectTransform, 60, 3, 210, 38);
+                row.details = UiKit.Label(rowRect, "", 15, TextAnchor.MiddleLeft, UiKit.Ink);
+                MenuWidgets.Abs(row.details.rectTransform, 56, 3, 184, 40);
                 var coin = UiKit.Panel(rowRect, "Moneda", UiKit.Gold);
                 coin.sprite = MenuSprites.Circle();
                 coin.raycastTarget = false;
-                MenuWidgets.Abs(coin.rectTransform, 272, 11, 20, 20);
-                row.inventory = UiKit.Label(rowRect, "", 18, TextAnchor.MiddleRight, UiKit.Ink);
-                MenuWidgets.Abs(row.inventory.rectTransform, 295, 4, 55, 36);
+                MenuWidgets.Abs(coin.rectTransform, 244, 13, 18, 18);
+                row.inventory = UiKit.Label(rowRect, "", 14, TextAnchor.MiddleRight, UiKit.Ink);
+                MenuWidgets.Abs(row.inventory.rectTransform, 264, 4, 50, 36);
                 playerHudRows.Add(row);
             }
         }
@@ -388,7 +396,7 @@ namespace RobaColores.Game.Presentation
                 case GamePhase.AwaitingMoveRoll:
                     actionBar.gameObject.SetActive(true);
                     rollButton.gameObject.SetActive(true);
-                    UiKit.SetLabel(rollButton, "Tirar dado (Espacio)");
+                    UiKit.SetLabel(rollButton, "LANZAR EL DADO  ·  ESPACIO");
                     break;
                 case GamePhase.AwaitingPathChoice:
                     ShowPathChoice();
@@ -421,9 +429,10 @@ namespace RobaColores.Game.Presentation
                     : current ? new Color32(255, 241, 184, 255) : new Color32(235, 221, 181, 255);
                 string status = p.Disqualified ? " · FUERA" : p.SkipNextTurn ? " · PIERDE TURNO" : p.PendingTimePenalty > 0f ? " · PENALIZACIÓN" : "";
                 row.details.text = "<color=#" + hex + "><b>" + p.Name + "</b></color>\n" + characterNames[p.Id] + status;
-                row.inventory.text = p.Inventory.Total.ToString();
+                row.inventory.text = p.Inventory.Total + " u.";
             }
-            logText.text = string.Join("\n", log.ToArray()) + (lastRoll.Length > 0 && session.Phase == GamePhase.AwaitingMoveRoll ? "" : "");
+            int visibleLogCount = Mathf.Min(log.Count, 4);
+            logText.text = string.Join("\n", log.GetRange(log.Count - visibleLogCount, visibleLogCount).ToArray());
             logPanel.gameObject.SetActive(log.Count > 0);
             if (session.Phase == GamePhase.GameOver) banner.text = "Fin de la partida";
             else if (session.Phase == GamePhase.MinigameRunning) banner.text = "Minijuego simultáneo: todos juegan";
@@ -503,7 +512,9 @@ namespace RobaColores.Game.Presentation
 
         void ShowOrder()
         {
-            var box = Modal("Orden de turnos", 900, 640);
+            int count = session.TurnOrder.Count;
+            float boxHeight = count > 4 ? 760f : 640f;
+            var box = Modal("Orden de turnos", 900, boxHeight);
             var sb = new StringBuilder();
             var rounds = session.OrderResult.Rounds;
             for (int r = 0; r < rounds.Count; r++)
@@ -511,23 +522,26 @@ namespace RobaColores.Game.Presentation
                 sb.AppendLine(r == 0 ? "Tirada inicial:" : "Desempate:");
                 foreach (var kv in rounds[r]) sb.AppendLine("   " + names[kv.Key] + ": " + kv.Value);
             }
+            float panelHeight = boxHeight - 168f;
             var leftPanel = MenuWidgets.FramePanel(box, new Color32(221, 202, 158, 255));
-            MenuWidgets.Abs(leftPanel.rectTransform, 22, 88, 392, 472);
+            MenuWidgets.Abs(leftPanel.rectTransform, 22, 88, 392, panelHeight);
             var leftTitle = UiKit.Label(leftPanel.transform, "RESULTADO DE LOS DADOS", 20, TextAnchor.MiddleCenter, UiKit.Wood);
-            MenuWidgets.Abs(leftTitle.rectTransform, 10, 418, 372, 40);
-            var left = UiKit.Label(leftPanel.transform, sb.ToString(), 22, TextAnchor.UpperLeft, UiKit.Ink);
-            MenuWidgets.Abs(left.rectTransform, 18, 30, 356, 376);
+            MenuWidgets.Abs(leftTitle.rectTransform, 10, panelHeight - 54f, 372, 40);
+            var left = UiKit.Label(leftPanel.transform, sb.ToString(), count > 4 ? 18 : 22, TextAnchor.UpperLeft, UiKit.Ink);
+            MenuWidgets.Abs(left.rectTransform, 18, 30, 356, panelHeight - 126f);
 
             var rightPanel = MenuWidgets.FramePanel(box, new Color32(221, 202, 158, 255));
-            MenuWidgets.Abs(rightPanel.rectTransform, 440, 88, 438, 472);
+            MenuWidgets.Abs(rightPanel.rectTransform, 440, 88, 438, panelHeight);
             var rightTitle = UiKit.Label(rightPanel.transform, "ORDEN DE SALIDA", 22, TextAnchor.MiddleCenter, UiKit.Wood);
-            MenuWidgets.Abs(rightTitle.rectTransform, 16, 418, 406, 40);
-            for (int i = 0; i < session.TurnOrder.Count; i++)
+            MenuWidgets.Abs(rightTitle.rectTransform, 16, panelHeight - 54f, 406, 40);
+            const float rowHeight = 64f, rowSpacing = 8f;
+            float rowsTop = panelHeight - 100f;
+            for (int i = 0; i < count; i++)
             {
                 int id = session.TurnOrder[i];
-                float y = 350f - i * 76f;
+                float y = rowsTop - rowHeight - i * (rowHeight + rowSpacing);
                 var row = MenuWidgets.FramePanel(rightPanel.transform, Color.white);
-                MenuWidgets.Abs(row.rectTransform, 16, y, 406, 64);
+                MenuWidgets.Abs(row.rectTransform, 16, y, 406, rowHeight);
                 var number = UiKit.Label(row.transform, (i + 1).ToString(), 30, TextAnchor.MiddleCenter, UiKit.Gold);
                 MenuWidgets.Abs(number.rectTransform, 8, 8, 44, 48);
                 var name = UiKit.Label(row.transform, "<color=#" + ColorUtility.ToHtmlStringRGB(colors[id]) + "><b>" + names[id] + "</b></color>\n" + characterNames[id], 19, TextAnchor.MiddleLeft, UiKit.Ink);
@@ -539,54 +553,78 @@ namespace RobaColores.Game.Presentation
 
         void ShowOrderRoll()
         {
-            var box = Modal("¿Quién comienza?", 900, 640);
+            var box = Modal("¿QUIÉN COMIENZA?", 900, 640);
             int playerId = session.CurrentOrderPlayerId.Value;
-            var prompt = UiKit.Label(box,
-                "Turno de tirada: " + names[playerId] + "\n" + characterNames[playerId],
-                31, TextAnchor.MiddleCenter, UiKit.Ink);
-            UiKit.Place(prompt.rectTransform, 0, 1, 0.64f, 1, 24, -152, -12, -72);
+            var historyPanel = MenuWidgets.FramePanel(box, new Color32(221, 202, 158, 255));
+            MenuWidgets.Abs(historyPanel.rectTransform, 22, 100, 474, 440);
+            var historyTitle = UiKit.Label(historyPanel.transform, "TIRADAS DE SALIDA", 24, TextAnchor.MiddleCenter, UiKit.Wood);
+            MenuWidgets.Abs(historyTitle.rectTransform, 18, 386, 438, 38);
+            var historyDivider = UiKit.Panel(historyPanel.transform, "Separador", new Color32(175, 125, 62, 255));
+            MenuWidgets.Abs(historyDivider.rectTransform, 24, 378, 426, 3);
 
-            var currentPlayer = MenuWidgets.FramePanel(box, colors[playerId]);
-            UiKit.Place(currentPlayer.rectTransform, 0.68f, 0, 1, 1, 10, 112, -24, -166);
-            AddPortrait(currentPlayer.transform, playerId, 20, 100, 190, 250);
-            var character = UiKit.Label(currentPlayer.transform, characterNames[playerId], 22, TextAnchor.MiddleCenter, Color.white);
-            MenuWidgets.Abs(character.rectTransform, 16, 52, 198, 40);
-            var playerName = UiKit.Label(currentPlayer.transform, names[playerId], 25, TextAnchor.MiddleCenter, Color.white);
-            MenuWidgets.Abs(playerName.rectTransform, 16, 14, 198, 36);
-
-            var history = new StringBuilder("Tiradas realizadas\n");
+            var history = new StringBuilder();
+            int historyLines = 0;
             for (int round = 0; round < session.OrderResult.Rounds.Count; round++)
             {
                 var rolls = session.OrderResult.Rounds[round];
                 if (rolls.Count == 0) continue;
-                history.AppendLine(round == 0 ? "Ronda inicial:" : "Desempate:");
+                history.AppendLine("<b>" + (round == 0 ? "RONDA INICIAL" : "DESEMPATE") + "</b>");
+                historyLines++;
                 var ids = new List<int>(rolls.Keys);
                 ids.Sort();
-                foreach (var id in ids) history.AppendLine("  " + names[id] + ": " + rolls[id]);
+                foreach (var id in ids)
+                {
+                    history.AppendLine("<color=#" + ColorUtility.ToHtmlStringRGB(colors[id]) + ">●</color>  " +
+                        names[id] + "   <b>" + rolls[id] + "</b>");
+                    historyLines++;
+                }
+                history.AppendLine();
+                historyLines++;
             }
-            history.AppendLine();
-            history.AppendLine("Lancen en orden. Si hay empate, repiten solo los empatados.");
-            var text = UiKit.Label(box, history.ToString(), 21, TextAnchor.UpperLeft, UiKit.Ink);
-            UiKit.Place(text.rectTransform, 0, 0, 0.64f, 1, 28, 100, -12, -170);
+            if (history.Length == 0)
+            {
+                history.Append("Todavía no hay resultados.\n\nCada jugador lanza una vez para decidir quién empieza.");
+                historyLines = 3;
+            }
+            int historySize = Mathf.Clamp(Mathf.FloorToInt(266f / Mathf.Max(1, historyLines) / 1.18f), 12, 23);
+            var historyText = UiKit.Label(historyPanel.transform, history.ToString(), historySize, TextAnchor.UpperLeft, UiKit.Ink);
+            historyText.supportRichText = true;
+            MenuWidgets.Abs(historyText.rectTransform, 28, 96, 410, 266);
 
-            var die = UiKit.Label(box, string.IsNullOrEmpty(lastOrderRoll) ? "?" : lastOrderRoll, 25, TextAnchor.MiddleCenter, UiKit.Wood);
-            UiKit.Place(die.rectTransform, 0.68f, 0, 1, 0, 12, 70, -24, 112);
-            var roll = MenuWidgets.FrameButton(box, "LANZAR DADO", 28, RollOrderDie, new Color32(137, 83, 42, 255));
-            UiKit.Place((RectTransform)roll.transform, 0.5f, 0, 0.5f, 0, -175, 20, 175, 80);
+            var tieNote = UiKit.Label(historyPanel.transform,
+                "Si hay empate, solo vuelven a lanzar los jugadores empatados.",
+                19, TextAnchor.MiddleCenter, UiKit.Wood);
+            MenuWidgets.Abs(tieNote.rectTransform, 24, 20, 426, 62);
+
+            var currentPlayer = MenuWidgets.FramePanel(box, Color.Lerp(colors[playerId], UiKit.Parchment, 0.12f));
+            MenuWidgets.Abs(currentPlayer.rectTransform, 510, 100, 368, 440);
+            var turnLabel = UiKit.Label(currentPlayer.transform, "LE TOCA LANZAR A", 20, TextAnchor.MiddleCenter, Color.white);
+            MenuWidgets.Abs(turnLabel.rectTransform, 22, 390, 324, 30);
+            var playerName = UiKit.Label(currentPlayer.transform, names[playerId], 31, TextAnchor.MiddleCenter, Color.white);
+            MenuWidgets.Abs(playerName.rectTransform, 18, 342, 332, 48);
+            AddPortrait(currentPlayer.transform, playerId, 83, 92, 202, 236);
+            var character = UiKit.Label(currentPlayer.transform, characterNames[playerId], 23, TextAnchor.MiddleCenter, Color.white);
+            MenuWidgets.Abs(character.rectTransform, 18, 42, 332, 38);
+
+            var roll = MenuWidgets.FrameButton(box, "LANZAR DADO", 28, RollOrderDie, new Color32(0xD6, 0xA2, 0x39, 255));
+            UiKit.Place((RectTransform)roll.transform, 0.5f, 0, 0.5f, 0, -170, 18, 170, 82);
         }
 
         void ShowResults()
         {
-            var box = Modal("Resultados del minijuego", 920, 600);
             var ev = session.LastEvaluation;
             var ids = new List<int>(ev.Keys); ids.Sort();
+            float boxHeight = ids.Count > 4 ? 760f : 600f;
+            var box = Modal("Resultados del minijuego", 920, boxHeight);
+            const float rowHeight = 62f, rowSpacing = 8f;
+            float rowsTop = boxHeight - 96f;
             for (int i = 0; i < ids.Count; i++)
             {
                 int id = ids[i];
                 var r = ev[id];
-                float y = 392f - i * 74f;
+                float y = rowsTop - rowHeight - i * (rowHeight + rowSpacing);
                 var row = MenuWidgets.FramePanel(box, new Color32(224, 207, 165, 255));
-                MenuWidgets.Abs(row.rectTransform, 28, y, 864, 64);
+                MenuWidgets.Abs(row.rectTransform, 28, y, 864, rowHeight);
                 var accent = UiKit.Panel(row.transform, "ColorJugador", colors[id]);
                 MenuWidgets.Abs(accent.rectTransform, 6, 6, 7, 52);
                 AddPortrait(row.transform, id, 18, 6, 48, 52);
@@ -621,17 +659,29 @@ namespace RobaColores.Game.Presentation
                 foreach (var o in RowRobbery.Opponents(winners, session.Round)) stealQueue.Add(new KeyValuePair<int, int>(w, o));
             }
             stealIndex = 0;
+            if (stealQueue.Count == 0)
+            {
+                var chosen = selections;
+                Act(() => session.ResolveRewards(chosen));
+                return;
+            }
             ShowSteal();
         }
 
         void ShowSteal()
         {
+            if (stealQueue == null || stealIndex < 0 || stealIndex >= stealQueue.Count)
+            {
+                Debug.LogError("No hay una selección de robo pendiente para mostrar.");
+                return;
+            }
+
             UiKit.Clear(modalLayer);
             var pair = stealQueue[stealIndex];
             var grid = session.Round.GridOf(pair.Value);
             var box = Modal(names[pair.Key] + " roba a " + names[pair.Value], 940, 600);
-            var hint = UiKit.Label(box, "Elige la fila de " + names[pair.Value] + " que quieres robar. Recuperas los colores de esa fila.", 22, TextAnchor.UpperLeft, UiKit.Ink);
-            UiKit.Place(hint.rectTransform, 0, 1, 1, 1, 24, -120, -24, -64);
+            var hint = UiKit.Label(box, "Pulsa una fila de " + names[pair.Value] + " para robar sus colores.", 21, TextAnchor.MiddleCenter, UiKit.Ink);
+            UiKit.Place(hint.rectTransform, 0, 1, 1, 1, 24, -116, -24, -68);
 
             var gridFrame = MenuWidgets.FramePanel(box, UiKit.ParchmentDark);
             MenuWidgets.Abs(gridFrame.rectTransform, 24, 24, 380, 420);
@@ -654,27 +704,10 @@ namespace RobaColores.Game.Presentation
 
             var rowsFrame = MenuWidgets.FramePanel(box, UiKit.ParchmentDark);
             MenuWidgets.Abs(rowsFrame.rectTransform, 424, 24, 492, 420);
-            var viewport = UiKit.Rect(rowsFrame.transform, "FilasViewport");
-            UiKit.Place(viewport, 0, 0, 1, 1, 8, 8, -8, -8);
-            var viewportImage = viewport.gameObject.AddComponent<Image>();
-            viewportImage.color = Color.white;
-            viewportImage.raycastTarget = true;
-            var mask = viewport.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = false;
-            var scroll = rowsFrame.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.inertia = false;
-            var rowsContent = UiKit.Rect(viewport, "Filas");
-            float rowHeight = 38f;
-            float rowSpacing = 4f;
-            float contentHeight = Mathf.Max(404f, grid.Height * (rowHeight + rowSpacing) + 8f);
-            UiKit.Place(rowsContent, 0, 1, 1, 1, 0, -contentHeight, 0, 0);
-            scroll.content = rowsContent;
-
-            // Una opcion por fila; el panel se desplaza si la plantilla tiene muchas filas.
+            var rowsTitle = UiKit.Label(rowsFrame.transform, "ELIGE QUÉ FILA ROBAR", 21, TextAnchor.MiddleCenter, UiKit.Wood);
+            MenuWidgets.Abs(rowsTitle.rectTransform, 14, 374, 464, 30);
+            float rowHeight = Mathf.Clamp(382f / grid.Height - 3f, 28f, 42f);
+            float rowSpacing = Mathf.Min(5f, (382f - rowHeight * grid.Height) / Mathf.Max(1, grid.Height - 1));
             for (int row = 0; row < grid.Height; row++)
             {
                 int r = row;
@@ -682,16 +715,35 @@ namespace RobaColores.Game.Presentation
                 var sb = new StringBuilder("Fila " + (row + 1) + ":");
                 int total = 0;
                 for (int c = 0; c < counts.Length; c++)
-                    if (counts[c] > 0) { sb.Append("  " + counts[c] + " " + content.palette.entries[c].name.ToLowerInvariant()); total += counts[c]; }
-                if (total == 0) sb.Append("  (vacía)");
-                var btn = MenuWidgets.FrameButton(rowsContent, sb.ToString(), 16, () => PickRow(r), new Color32(137, 83, 42, 255));
-                float top = contentHeight - 4f - row * (rowHeight + rowSpacing);
-                UiKit.Place((RectTransform)btn.transform, 0, 1, 1, 1, 4, top - rowHeight, -4, top);
+                {
+                    if (counts[c] <= 0) continue;
+                    if (total > 0) sb.Append("  ·");
+                    sb.Append("  " + counts[c] + " " + content.palette.entries[c].name.ToLowerInvariant());
+                    total += counts[c];
+                }
+                if (total == 0) sb.Append("  ·  Vacía");
+                var fill = total == 0
+                    ? new Color32(158, 119, 72, 255)
+                    : new Color32(137, 83, 42, 255);
+                var btn = MenuWidgets.FrameButton(rowsFrame.transform, sb.ToString(), 15, () => PickRow(r), fill);
+                float top = 366f - row * (rowHeight + rowSpacing);
+                MenuWidgets.Abs((RectTransform)btn.transform, 10, top - rowHeight, 464, rowHeight);
             }
         }
 
         void PickRow(int row)
         {
+            if (stealQueue == null || stealIndex < 0 || stealIndex >= stealQueue.Count)
+            {
+                Debug.LogError("Se intentó elegir una fila sin un robo pendiente.");
+                return;
+            }
+            if (row < 0 || row >= session.Round.Figure.Height)
+            {
+                Debug.LogError("La fila seleccionada está fuera de la cuadrícula: " + row + ".");
+                return;
+            }
+
             var pair = stealQueue[stealIndex];
             selections[pair.Key][pair.Value] = row;
             stealIndex++;

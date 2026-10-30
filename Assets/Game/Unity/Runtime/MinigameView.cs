@@ -59,7 +59,7 @@ namespace RobaColores.Game.Presentation
 
             var refBox = MenuWidgets.FramePanel(root, UiKit.Parchment);
             UiKit.Place(refBox.rectTransform, 0, 1, 0, 1, 18, -324, 326, -16);
-            var refTitle = UiKit.Label(refBox.transform, "MAPA DEL DESAFÍO", 18, TextAnchor.MiddleCenter, UiKit.Ink);
+            var refTitle = UiKit.Label(refBox.transform, "REFERENCIA", 18, TextAnchor.MiddleCenter, UiKit.Ink);
             UiKit.Place(refTitle.rectTransform, 0, 1, 1, 1, 4, -30, -4, -4);
             var refGrid = UiKit.Rect(refBox.transform, "Cuadricula");
             UiKit.Place(refGrid, 0, 0, 1, 1, 12, 12, -12, -38);
@@ -71,7 +71,7 @@ namespace RobaColores.Game.Presentation
 
             var eyebrow = UiKit.Label(root, "DESAFÍO DE PIXEL ART", 18, TextAnchor.MiddleLeft, new Color32(232, 192, 111, 255));
             UiKit.Place(eyebrow.rectTransform, 0, 1, 0, 1, 354, -34, 520, -8);
-            var cat = UiKit.Label(root, GameText.CategoryName(round.Category), 34, TextAnchor.MiddleLeft, UiKit.Parchment);
+            var cat = UiKit.Label(root, "Categoría: " + GameText.CategoryName(round.Category), 34, TextAnchor.MiddleLeft, UiKit.Parchment);
             UiKit.Place(cat.rectTransform, 0, 1, 0, 1, 354, -82, 560, -34);
             timerText = UiKit.Label(root, "", 52, TextAnchor.MiddleCenter, UiKit.Parchment);
             UiKit.Place(timerText.rectTransform, 0.65f, 1, 0.81f, 1, 0, -92, 0, -16);
@@ -80,21 +80,46 @@ namespace RobaColores.Game.Presentation
             var hint = UiKit.Label(root, "Clic izquierdo: pintar · clic derecho o X: borrar\nCualquier jugador puede terminar el desafío.", 16, TextAnchor.MiddleLeft, UiKit.Parchment);
             UiKit.Place(hint.rectTransform, 0.52f, 1, 0.86f, 1, 0, -156, 0, -108);
 
-            // Un panel por participante, repartidos en el ancho.
+            // Hasta cuatro jugadores ocupan una fila; con cinco o seis se usa una rejilla 3 x 2
+            // a la derecha de la referencia para que las cuadriculas sigan siendo legibles.
             var ids = new List<int>(round.ParticipantIds);
             ids.Sort();
             int n = ids.Count;
-            for (int i = 0; i < n; i++)
-                BuildPanel(ids[i], (float)i / n, (float)(i + 1) / n, names[ids[i]], colors[ids[i]], n >= 4);
+            if (n > 4)
+            {
+                const int columns = 3;
+                int rows = (n + columns - 1) / columns;
+                const float left = 0.185f, right = 0.992f, bottom = 0.015f, top = 0.85f;
+                const float gapX = 0.006f, gapY = 0.012f;
+                float cellWidth = (right - left - (columns - 1) * gapX) / columns;
+                float cellHeight = (top - bottom - (rows - 1) * gapY) / rows;
+                for (int i = 0; i < n; i++)
+                {
+                    int row = i / columns, col = i % columns;
+                    int inRow = Mathf.Min(columns, n - row * columns);
+                    float rowWidth = inRow * cellWidth + (inRow - 1) * gapX;
+                    float rowLeft = left + (right - left - rowWidth) * 0.5f;
+                    float x0 = rowLeft + col * (cellWidth + gapX);
+                    float y1 = top - row * (cellHeight + gapY);
+                    BuildPanel(ids[i], x0, x0 + cellWidth, y1 - cellHeight, y1, names[ids[i]], colors[ids[i]], true);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < n; i++)
+                    BuildPanel(ids[i], (float)i / n, (float)(i + 1) / n, 0.015f, 0.54f,
+                        names[ids[i]], colors[ids[i]], n >= 4);
+            }
         }
 
-        void BuildPanel(int playerId, float ax0, float ax1, string playerName, Color playerColor, bool compact)
+        void BuildPanel(int playerId, float ax0, float ax1, float bottom, float top,
+            string playerName, Color playerColor, bool compact)
         {
             var round = session.Round;
             var p = new PlayerPanel { playerId = playerId, width = round.Figure.Width, height = round.Figure.Height, selected = 0 };
             var panel = MenuWidgets.FramePanel(root, new Color32(58, 39, 31, 250));
             panel.name = "Jugador" + playerId;
-            UiKit.Place(panel.rectTransform, ax0, 0.015f, ax1, 0.54f, 8, 0, -8, 0);
+            UiKit.Place(panel.rectTransform, ax0, bottom, ax1, top, 8, 0, -8, 0);
 
             var header = MenuWidgets.FramePanel(panel.transform, playerColor);
             UiKit.Place(header.rectTransform, 0, 1, 1, 1, 10, -49, -10, -8);

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameSettings
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.GameSettingsAsset
   minPlayers: 2
-  maxPlayers: 4
+  maxPlayers: 6
   allowRepeatedCharacters: 0
   initialUnitsPerColor: 200
   minigameSeconds: 90

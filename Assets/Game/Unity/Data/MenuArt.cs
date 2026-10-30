@@ -2,10 +2,14 @@ using UnityEngine;
 
 namespace RobaColores.Game.Presentation
 {
-    // Imagenes del menu principal. Provisionales: recortes del boceto. Se sustituyen por el arte final sin tocar codigo.
+    // Imagenes y fondos del menu principal.
     [CreateAssetMenu(menuName = "Roba Colores/Arte del menu", fileName = "MenuArt")]
     public class MenuArt : ScriptableObject
     {
+        [Tooltip("Diseno completo de la pantalla inicial; los botones se superponen como zonas clicables.")]
+        public Texture2D mainMenuBackground;
+        [Tooltip("Diseno completo de seleccion de jugadores; se superponen controles interactivos.")]
+        public Texture2D playerSelectionBackground;
         [Tooltip("Titulo, kraken y pirata (linea oscura sobre fondo transparente).")]
         public Sprite titleArt;
         public Sprite swordIcon;

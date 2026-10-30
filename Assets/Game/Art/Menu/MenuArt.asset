@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49c04f6be5bb4344bbcb4a3b11831b10, type: 3}
   m_Name: MenuArt
   m_EditorClassIdentifier: Assembly-CSharp::RobaColores.Game.Presentation.MenuArt
+  mainMenuBackground: {fileID: 2800000, guid: d464587eef2f4f94addf2024bad52392, type: 3}
+  playerSelectionBackground: {fileID: 2800000, guid: 9b5d888326ea4d419ad8cda1033a53f1, type: 3}
   titleArt: {fileID: 21300000, guid: bedfd51f3522b0945ad4b3dad81a1e0b, type: 3}
   swordIcon: {fileID: 21300000, guid: 02bf5007fd7e88d4d836786b137e1e8f, type: 3}
   compassIcon: {fileID: 21300000, guid: 8c64479bd68e4a74b916caacbfb93f96, type: 3}

@@ -69,6 +69,8 @@ namespace RobaColores.Game
         string lastRoll;
         Font titleFont;
         GUIStyle titleStyle;
+        GUIStyle eyebrowStyle;
+        GUIStyle panelTitleStyle;
         GUIStyle headingStyle;
         GUIStyle playerHeadingStyle;
         GUIStyle bodyStyle;
@@ -76,8 +78,6 @@ namespace RobaColores.Game
         GUIStyle smallStyle;
         GUIStyle playerSmallStyle;
         GUIStyle buttonStyle;
-        Texture2D backgroundTexture;
-        Texture2D panelTexture;
         Texture2D buttonTexture;
         Texture2D highlightedButtonTexture;
 
@@ -272,91 +272,115 @@ namespace RobaColores.Game
 
         void DrawBackground()
         {
-            GUI.DrawTexture(new Rect(0, 0, LayoutWidth, LayoutHeight), backgroundTexture);
-            DrawRect(new Rect(26, 26, LayoutWidth - 52, 136), new Color32(24, 29, 47, 218));
+            var frame = new Color32(25, 39, 49, 205);
+            var trim = new Color32(199, 150, 65, 220);
+            DrawRect(new Rect(0, 0, LayoutWidth, 14), frame);
+            DrawRect(new Rect(0, LayoutHeight - 14, LayoutWidth, 14), frame);
+            DrawRect(new Rect(0, 14, 14, LayoutHeight - 28), frame);
+            DrawRect(new Rect(LayoutWidth - 14, 14, 14, LayoutHeight - 28), frame);
+            DrawRect(new Rect(14, 14, 180, 3), trim);
+            DrawRect(new Rect(LayoutWidth - 194, 14, 180, 3), trim);
+            DrawRect(new Rect(14, LayoutHeight - 17, 180, 3), trim);
+            DrawRect(new Rect(LayoutWidth - 194, LayoutHeight - 17, 180, 3), trim);
         }
 
         void DrawPlayerPanel()
         {
-            const float width = 405f;
-            const float startY = 190f;
+            const float x = 26f;
+            const float y = 26f;
+            const float width = 520f;
+            const float headerHeight = 48f;
+            const float rowHeight = 82f;
+            var panel = new Rect(x, y, width, headerHeight + players.Count * rowHeight + 14f);
+            DrawFrame(panel, new Color32(226, 207, 165, 250));
+            GUI.Label(new Rect(x + 18, y + 7, width - 36, 34), "TRIPULACIÓN", panelTitleStyle);
+            DrawRect(new Rect(x + 18, y + headerHeight - 1, width - 36, 2), new Color32(177, 125, 53, 230));
+
             for (var i = 0; i < players.Count; i++)
             {
                 var player = players[i];
-                var rect = new Rect(28, startY + i * 158, width, 138);
-                DrawRect(rect, i == currentPlayer && phase != TurnPhase.InitialRoll
-                    ? new Color32(248, 226, 180, 238)
-                    : new Color32(232, 219, 188, 226));
-                DrawRect(new Rect(rect.x, rect.y, 12, rect.height), PlayerColors[i]);
-                var portraitRect = new Rect(rect.x + 25, rect.y + 25, 88, 88);
-                DrawRect(portraitRect, new Color32(56, 39, 34, 255));
+                var rect = new Rect(x + 12, y + headerHeight + i * rowHeight, width - 24, rowHeight - 6);
+                bool active = i == currentPlayer && phase != TurnPhase.InitialRoll;
+                DrawFrame(rect, active
+                    ? new Color32(255, 237, 185, 255)
+                    : new Color32(238, 224, 193, 250));
+                DrawRect(new Rect(rect.x + 8, rect.y + 8, 6, rect.height - 16), PlayerColors[i]);
+                var portraitRect = new Rect(rect.x + 23, rect.y + 10, 58, 58);
+                DrawRect(new Rect(portraitRect.x - 3, portraitRect.y - 3, portraitRect.width + 6, portraitRect.height + 6),
+                    new Color32(70, 43, 26, 255));
                 if (player.portrait != null)
                     GUI.DrawTexture(portraitRect, player.portrait, ScaleMode.ScaleToFit);
 
-                var infoX = portraitRect.xMax + 16;
-                var infoWidth = rect.xMax - infoX - 12;
-                GUI.Label(new Rect(infoX, rect.y + 8, infoWidth, 42),
-                    "J" + (i + 1) + "  " + player.setup.characterName, playerHeadingStyle);
-
+                var infoX = portraitRect.xMax + 15;
+                var infoWidth = rect.xMax - infoX - 100;
+                GUI.Label(new Rect(infoX, rect.y + 7, infoWidth, 30),
+                    "J" + player.setup.playerNumber + "  ·  " + player.setup.characterName, playerHeadingStyle);
                 var tileName = player.tile.name;
-                GUI.Label(new Rect(infoX, rect.y + 53, infoWidth, 36),
-                    tileName.EndsWith("_S", StringComparison.Ordinal) ? "INICIO" :
+                var location = tileName.EndsWith("_S", StringComparison.Ordinal) ? "INICIO" :
                     tileName.EndsWith("_M", StringComparison.Ordinal) ? "META" :
-                    CategoryFor(player.tile.Color), playerBodyStyle);
+                    CategoryFor(player.tile.Color);
+                var progress = distanceToFinish[startTile] - distanceToFinish[player.tile];
+                GUI.Label(new Rect(infoX, rect.y + 38, infoWidth, 22),
+                    location + "  ·  Avance " + progress + "/" + distanceToFinish[startTile], playerBodyStyle);
+                var barRect = new Rect(infoX, rect.y + 65, infoWidth, 5);
+                DrawRect(barRect, new Color32(106, 76, 47, 150));
+                var fraction = distanceToFinish[startTile] == 0 ? 0f :
+                    (float)progress / distanceToFinish[startTile];
+                DrawRect(new Rect(barRect.x, barRect.y, barRect.width * Mathf.Clamp01(fraction), barRect.height),
+                    PlayerColors[i]);
 
+                int inventoryTotal = 0;
+                if (player.setup.pixelInventory != null)
+                    foreach (var count in player.setup.pixelInventory)
+                        inventoryTotal += count;
+                GUI.Label(new Rect(rect.xMax - 94, rect.y + 26, 82, 28), inventoryTotal + " u", playerSmallStyle);
                 if (phase == TurnPhase.InitialRoll)
                 {
                     var result = player.initialRoll.HasValue ? player.initialRoll.Value.ToString() : "—";
-                    GUI.Label(new Rect(infoX, rect.y + 92, infoWidth, 32), "Tirada: " + result, playerSmallStyle);
+                    GUI.Label(new Rect(rect.xMax - 94, rect.y + 48, 82, 22), "Dado: " + result, playerSmallStyle);
                 }
-                else
+                else if (player.setup.miniGameTimePenaltySeconds > 0f)
                 {
-                    var penalty = player.setup.miniGameTimePenaltySeconds;
-                    var penaltyText = penalty > 0f ? "  ·  +" + Mathf.CeilToInt(penalty) + " s" : "";
-                    GUI.Label(new Rect(infoX, rect.y + 92, infoWidth, 32),
-                        "Avance: " + (distanceToFinish[startTile] - distanceToFinish[player.tile]) +
-                        " / " + distanceToFinish[startTile] + penaltyText, playerSmallStyle);
+                    GUI.Label(new Rect(rect.xMax - 94, rect.y + 48, 82, 22),
+                        "+" + Mathf.CeilToInt(player.setup.miniGameTimePenaltySeconds) + " s", playerSmallStyle);
                 }
             }
         }
 
         void DrawTurnPanel()
         {
-            GUI.Label(new Rect(475, 48, 980, 70), "ROBA COLORES", titleStyle);
+            var header = new Rect(650, 26, 620, 104);
+            DrawFrame(header, new Color32(91, 54, 32, 255));
+            GUI.Label(new Rect(header.x + 20, header.y + 9, header.width - 40, 26), "ROBA COLORES", eyebrowStyle);
             var activeName = phase == TurnPhase.InitialRoll ? "ORDEN DE SALIDA" :
                 phase == TurnPhase.GameOver ? "¡TENEMOS GANADOR!" :
-                "TURNO DE JUGADOR " + (currentPlayer + 1);
-            GUI.Label(new Rect(500, 106, 920, 42), activeName, bodyStyle);
+                "TURNO DE " + players[currentPlayer].setup.characterName.ToUpperInvariant();
+            GUI.Label(new Rect(header.x + 18, header.y + 35, header.width - 36, 55), activeName, titleStyle);
 
-            var panel = new Rect(620, 742, 680, 248);
-            GUI.DrawTexture(panel, panelTexture);
-            GUI.Label(new Rect(panel.x + 24, panel.y + 12, panel.width - 48, 90), message, headingStyle);
+            var logPanel = new Rect(1380, 900, 510, 150);
+            DrawFrame(logPanel, new Color32(231, 215, 179, 250));
+            GUI.Label(new Rect(logPanel.x + 20, logPanel.y + 12, logPanel.width - 40, 28), "BITÁCORA", panelTitleStyle);
+            DrawRect(new Rect(logPanel.x + 20, logPanel.y + 42, logPanel.width - 40, 2),
+                new Color32(177, 125, 53, 230));
+            GUI.Label(new Rect(logPanel.x + 22, logPanel.y + 52, logPanel.width - 44, 82),
+                message, bodyStyle);
 
             if (phase == TurnPhase.InitialRoll)
             {
                 var next = initialRollQueue.Peek();
-                var label = "JUGADOR " + (next + 1) + " · TIRAR";
-                if (GUI.Button(new Rect(panel.x + 190, panel.y + 144, 300, 74), label, buttonStyle))
+                var label = "TIRAR DADO · JUGADOR " + players[next].setup.playerNumber;
+                if (GUI.Button(new Rect(690, 954, 540, 98), label, buttonStyle))
                     RollInitialDie();
             }
             else if (phase == TurnPhase.Playing)
             {
-                var label = lastRoll.Length == 0 ? "TIRAR DADO" : "TIRAR DADO";
-                if (GUI.Button(new Rect(panel.x + 190, panel.y + 144, 300, 74), label, buttonStyle))
+                if (GUI.Button(new Rect(690, 954, 540, 98), "TIRAR DADO  ·  ESPACIO", buttonStyle))
                     RollTurnDie();
             }
-            else if (phase == TurnPhase.Moving)
+            else if (phase == TurnPhase.GameOver && GUI.Button(new Rect(690, 954, 540, 98), "VOLVER AL MENÚ", buttonStyle))
             {
-                GUI.Label(new Rect(panel.x + 24, panel.y + 150, panel.width - 48, 52),
-                    "Casillas por avanzar: " + movesRemaining, bodyStyle);
+                UnityEngine.SceneManagement.SceneManager.LoadScene("Menu");
             }
-            else if (phase == TurnPhase.GameOver && GUI.Button(new Rect(panel.x + 190, panel.y + 144, 300, 74), "VOLVER AL MENÚ", buttonStyle))
-            {
-                UnityEngine.SceneManagement.SceneManager.LoadScene("SampleScene");
-            }
-
-            if (!string.IsNullOrEmpty(lastRoll))
-                GUI.Label(new Rect(760, 620, 420, 78), lastRoll, headingStyle);
         }
 
         void DrawRoutePanel()
@@ -364,17 +388,18 @@ namespace RobaColores.Game
             if (phase != TurnPhase.ChoosingRoute)
                 return;
 
-            var panel = new Rect(1360, 190, 520, 440);
-            GUI.DrawTexture(panel, panelTexture);
-            GUI.Label(new Rect(panel.x + 24, panel.y + 18, panel.width - 48, 72), "ELIGE TU CAMINO", headingStyle);
-            GUI.Label(new Rect(panel.x + 24, panel.y + 94, panel.width - 48, 52), "Puedes avanzar por cualquiera de estas rutas:", bodyStyle);
+            var panel = new Rect(1390, 206, 500, 430);
+            DrawFrame(panel, new Color32(231, 215, 179, 250));
+            GUI.Label(new Rect(panel.x + 22, panel.y + 18, panel.width - 44, 48), "ELIGE TU CAMINO", panelTitleStyle);
+            GUI.Label(new Rect(panel.x + 28, panel.y + 68, panel.width - 56, 56),
+                "Selecciona la casilla por la que quieres avanzar.", bodyStyle);
 
             var visibleOptions = Mathf.Min(availableRoutes.Count, 5);
             for (var i = 0; i < visibleOptions; i++)
             {
                 var option = availableRoutes[i];
                 var label = "Casilla " + CategoryFor(option.Color);
-                if (GUI.Button(new Rect(panel.x + 54, panel.y + 160 + i * 56, panel.width - 108, 48), label, buttonStyle))
+                if (GUI.Button(new Rect(panel.x + 30, panel.y + 132 + i * 58, panel.width - 60, 50), label, buttonStyle))
                 {
                     chosenRoute = i;
                     phase = TurnPhase.Moving;
@@ -561,6 +586,10 @@ namespace RobaColores.Game
 
         void OnMiniGameCompleted(int[] winners, bool eliminationVictory)
         {
+            var updatedSetups = LocalGameSetup.Players;
+            for (var i = 0; i < players.Count; i++)
+                players[i].setup = updatedSetups[i];
+
             if (winners.Length == 0)
             {
                 Debug.LogError("El minijuego terminó sin seleccionar ningún ganador.", this);
@@ -616,71 +645,114 @@ namespace RobaColores.Game
 
         void BuildStyles()
         {
-            backgroundTexture = MakeTexture(new Color32(24, 29, 47, 160));
-            panelTexture = MakeTexture(new Color32(238, 220, 176, 245));
-            buttonTexture = MakeTexture(new Color32(105, 60, 42, 255));
-            highlightedButtonTexture = MakeTexture(new Color32(177, 119, 51, 255));
+            buttonTexture = MakeWoodTexture(new Color32(112, 65, 36, 255));
+            highlightedButtonTexture = MakeWoodTexture(new Color32(157, 101, 48, 255));
 
             titleStyle = new GUIStyle(GUI.skin.label)
             {
                 font = titleFont,
-                fontSize = 68,
+                fontSize = 38,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color32(248, 225, 174, 255) }
+            };
+            eyebrowStyle = new GUIStyle(GUI.skin.label)
+            {
+                font = titleFont,
+                fontSize = 21,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color32(241, 199, 110, 255) }
+            };
+            panelTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                font = titleFont,
+                fontSize = 27,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = new Color32(86, 51, 28, 255) }
             };
             headingStyle = new GUIStyle(GUI.skin.label)
             {
                 font = titleFont,
-                fontSize = 38,
+                fontSize = 32,
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true,
                 normal = { textColor = new Color32(56, 39, 34, 255) }
             };
             playerHeadingStyle = new GUIStyle(headingStyle)
             {
-                fontSize = 27,
+                fontSize = 23,
                 alignment = TextAnchor.MiddleLeft,
                 wordWrap = false
             };
             bodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 26,
-                alignment = TextAnchor.MiddleCenter,
+                fontSize = 21,
+                alignment = TextAnchor.MiddleLeft,
                 wordWrap = true,
                 normal = { textColor = new Color32(56, 39, 34, 255) }
             };
             playerBodyStyle = new GUIStyle(bodyStyle)
             {
-                fontSize = 21,
-                alignment = TextAnchor.MiddleLeft,
+                fontSize = 17,
                 wordWrap = false
             };
-            smallStyle = new GUIStyle(bodyStyle) { fontSize = 19 };
+            smallStyle = new GUIStyle(bodyStyle) { fontSize = 18 };
             playerSmallStyle = new GUIStyle(smallStyle)
             {
-                fontSize = 17,
-                alignment = TextAnchor.MiddleLeft,
+                fontSize = 16,
+                alignment = TextAnchor.MiddleCenter,
                 wordWrap = false
             };
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                font = GUI.skin.button.font,
-                fontSize = 32,
+                font = titleFont != null ? titleFont : GUI.skin.button.font,
+                fontSize = 31,
                 alignment = TextAnchor.MiddleCenter,
-                normal = { background = buttonTexture, textColor = Color.white },
+                normal = { background = buttonTexture, textColor = new Color32(255, 238, 196, 255) },
                 hover = { background = highlightedButtonTexture, textColor = Color.white },
                 active = { background = highlightedButtonTexture, textColor = Color.white },
                 border = new RectOffset(8, 8, 8, 8),
-                padding = new RectOffset(10, 10, 6, 6)
+                padding = new RectOffset(18, 18, 8, 8),
+                wordWrap = true
             };
         }
 
-        static Texture2D MakeTexture(Color color)
+        static Texture2D MakeWoodTexture(Color32 baseColor)
         {
-            var texture = new Texture2D(1, 1);
-            texture.SetPixel(0, 0, color);
+            const int size = 64;
+            var pixels = new Color32[size * size];
+            for (var y = 0; y < size; y++)
+                for (var x = 0; x < size; x++)
+                {
+                    var grain = (Mathf.PerlinNoise(x * 0.075f, y * 0.22f) - 0.5f) * 28f;
+                    var plank = y % 16;
+                    var seam = plank < 2 || plank == 15;
+                    var edge = x < 2 || x >= size - 2;
+                    var shade = seam ? -35f : edge ? 20f : grain;
+                    pixels[y * size + x] = new Color32(
+                        (byte)Mathf.Clamp(baseColor.r + shade, 0, 255),
+                        (byte)Mathf.Clamp(baseColor.g + shade * 0.7f, 0, 255),
+                        (byte)Mathf.Clamp(baseColor.b + shade * 0.45f, 0, 255),
+                        255);
+                }
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            texture.SetPixels32(pixels);
             texture.Apply();
             return texture;
+        }
+
+        static void DrawFrame(Rect rect, Color fill)
+        {
+            DrawRect(new Rect(rect.x + 7, rect.y + 8, rect.width, rect.height), new Color32(12, 20, 27, 180));
+            DrawRect(rect, new Color32(53, 32, 19, 255));
+            DrawRect(new Rect(rect.x + 4, rect.y + 4, rect.width - 8, rect.height - 8),
+                new Color32(202, 151, 67, 255));
+            DrawRect(new Rect(rect.x + 8, rect.y + 8, rect.width - 16, rect.height - 16), fill);
+            DrawRect(new Rect(rect.x + 9, rect.y + 9, rect.width - 18, 2),
+                new Color(1f, 0.92f, 0.72f, 0.28f));
         }
 
         static void DrawRect(Rect rect, Color color)
@@ -693,6 +765,10 @@ namespace RobaColores.Game
 
         void OnDestroy()
         {
+            if (buttonTexture != null)
+                Destroy(buttonTexture);
+            if (highlightedButtonTexture != null)
+                Destroy(highlightedButtonTexture);
             foreach (var material in tokenMaterials)
             {
                 if (material != null)
