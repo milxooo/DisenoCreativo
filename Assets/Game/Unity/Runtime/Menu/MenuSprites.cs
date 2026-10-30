@@ -6,34 +6,22 @@ namespace RobaColores.Game.Presentation
     // Asi el menu no depende de arte externo y se puede sustituir luego por sprites reales.
     public static class MenuSprites
     {
-        static Sprite frame, circle, parchment, theater;
+        static Sprite frame, circle, parchment, theater, woodWall;
 
         // Marco redondeado de doble linea (como los botones del boceto). Se tine con Image.color.
         public static Sprite Frame()
         {
             if (frame != null) return frame;
             const int n = 40;
-            const float r = 9f;
             var px = new Color32[n * n];
             for (int y = 0; y < n; y++)
                 for (int x = 0; x < n; x++)
                 {
-                    float fx = x + 0.5f, fy = y + 0.5f;
-                    bool inCorner = (fx < r || fx > n - r) && (fy < r || fy > n - r);
-                    float d;
-                    if (inCorner)
-                    {
-                        float cx = Mathf.Clamp(fx, r, n - r), cy = Mathf.Clamp(fy, r, n - r);
-                        d = r - Mathf.Sqrt((fx - cx) * (fx - cx) + (fy - cy) * (fy - cy));
-                    }
-                    else d = Mathf.Min(Mathf.Min(fx, n - fx), Mathf.Min(fy, n - fy));
-
-                    if (d < 0f) { px[y * n + x] = new Color32(0, 0, 0, 0); continue; }
-                    byte shade = 255;
-                    if (d < 2.2f) shade = 70;
-                    else if (d >= 3.6f && d < 5.2f) shade = 105;
-                    byte alpha = (byte)(255 * Mathf.Clamp01(d * 2f));
-                    px[y * n + x] = new Color32(shade, shade, shade, alpha);
+                    int edge = Mathf.Min(Mathf.Min(x, n - 1 - x), Mathf.Min(y, n - 1 - y));
+                    byte shade = edge < 2 ? (byte)39 : edge < 5 ? (byte)112 : edge < 8 ? (byte)206 : (byte)255;
+                    if (edge >= 8 && (x == 8 || y == 8))
+                        shade = 236;
+                    px[y * n + x] = new Color32(shade, shade, shade, 255);
                 }
             var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             tex.SetPixels32(px);
@@ -89,6 +77,48 @@ namespace RobaColores.Game.Presentation
             tex.Apply();
             parchment = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
             return parchment;
+        }
+
+        public static Sprite WoodWall()
+        {
+            if (woodWall != null) return woodWall;
+            const int w = 512, h = 384, plankHeight = 48;
+            var px = new Color32[w * h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    int plank = y / plankHeight;
+                    int offset = (plank % 2) * 67;
+                    int seam = (x + offset) % 192;
+                    float grain = Mathf.PerlinNoise(x * 0.025f + 2.4f, y * 0.09f + 5.1f);
+                    int shade = Mathf.RoundToInt((grain - 0.5f) * 26f);
+                    Color32 baseColor = plank % 3 == 0
+                        ? new Color32(79, 45, 28, 255)
+                        : plank % 3 == 1
+                            ? new Color32(91, 52, 31, 255)
+                            : new Color32(72, 42, 30, 255);
+                    if (y % plankHeight < 3 || seam < 4)
+                        baseColor = new Color32(39, 27, 24, 255);
+                    else if (y % plankHeight < 6 || seam < 7)
+                        baseColor = new Color32(132, 79, 43, 255);
+                    else if ((x + offset) % 192 < 14 || x % 89 < 2)
+                        shade -= 11;
+
+                    px[y * w + x] = new Color32(
+                        (byte)Mathf.Clamp(baseColor.r + shade, 0, 255),
+                        (byte)Mathf.Clamp(baseColor.g + shade / 2, 0, 255),
+                        (byte)Mathf.Clamp(baseColor.b + shade / 3, 0, 255), 255);
+                }
+
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Repeat
+            };
+            tex.SetPixels32(px);
+            tex.Apply();
+            woodWall = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
+            return woodWall;
         }
 
         public static Sprite Theater()

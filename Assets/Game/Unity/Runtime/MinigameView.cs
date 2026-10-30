@@ -51,7 +51,7 @@ namespace RobaColores.Game.Presentation
             var round = s.Round;
             root = (RectTransform)transform;
             UiKit.Stretch(root);
-            var bg = UiKit.Panel(root, "Fondo", new Color(0.025f, 0.06f, 0.11f, 0.68f));
+            var bg = UiKit.Panel(root, "Fondo", new Color(0.025f, 0.06f, 0.11f, 0.46f));
             UiKit.Stretch(bg.rectTransform);
 
             var header = MenuWidgets.FramePanel(root, new Color32(65, 42, 31, 246));
@@ -74,9 +74,9 @@ namespace RobaColores.Game.Presentation
             var cat = UiKit.Label(root, GameText.CategoryName(round.Category), 34, TextAnchor.MiddleLeft, UiKit.Parchment);
             UiKit.Place(cat.rectTransform, 0, 1, 0, 1, 354, -82, 560, -34);
             timerText = UiKit.Label(root, "", 52, TextAnchor.MiddleCenter, UiKit.Parchment);
-            UiKit.Place(timerText.rectTransform, 0.72f, 1, 0.86f, 1, 0, -92, 0, -16);
+            UiKit.Place(timerText.rectTransform, 0.65f, 1, 0.81f, 1, 0, -92, 0, -16);
             var simultaneous = UiKit.Label(root, "TODOS JUEGAN A LA VEZ", 20, TextAnchor.MiddleCenter, UiKit.Gold);
-            UiKit.Place(simultaneous.rectTransform, 0.85f, 1, 1, 1, 0, -72, -18, -24);
+            UiKit.Place(simultaneous.rectTransform, 0.82f, 1, 1, 1, 0, -72, -18, -24);
             var hint = UiKit.Label(root, "Clic izquierdo: pintar · clic derecho o X: borrar\nCualquier jugador puede terminar el desafío.", 16, TextAnchor.MiddleLeft, UiKit.Parchment);
             UiKit.Place(hint.rectTransform, 0.52f, 1, 0.86f, 1, 0, -156, 0, -108);
 

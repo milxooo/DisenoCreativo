@@ -60,6 +60,15 @@ namespace RobaColores.Game
             return gameArtwork[characterIndex];
         }
 
+        public static Rect GetArtworkUvRect(Texture2D texture, float aspect)
+        {
+            if (texture == null || aspect <= 0f)
+                return new Rect(0f, 0f, 1f, 1f);
+
+            float width = Mathf.Min(1f, aspect * texture.height / texture.width);
+            return new Rect((1f - width) * 0.5f, 0f, width, 1f);
+        }
+
         public static Material GetArtworkMaterial()
         {
             if (artworkMaterial != null) return artworkMaterial;

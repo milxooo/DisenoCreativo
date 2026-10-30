@@ -150,7 +150,8 @@ namespace RobaColores.Game.Presentation
             ui.artwork = artworkObject.GetComponent<RawImage>();
             UiKit.Place(ui.artwork.rectTransform, 0, 0, 1, 1, 4, 4, -4, -4);
             ui.artwork.material = artworkMaterial;
-            ui.artwork.uvRect = new Rect(0.15f, 0f, 0.7f, 1f);
+            ui.artwork.uvRect = CharacterPortraitLibrary.GetArtworkUvRect(
+                CharacterPortraitLibrary.GetCharacterArtwork(0), artWidth / artHeight);
             ui.artwork.raycastTarget = false;
             ui.mark = UiKit.Label(ui.portraitBack.transform, "?", 110, TextAnchor.MiddleCenter, UiKit.Ink);
             UiKit.Stretch(ui.mark.rectTransform);

@@ -58,6 +58,8 @@ namespace RobaColores.Game.Presentation
 
             var canvas = UiKit.CreateCanvas("MenuCanvas", 0, new Vector2(1920, 1080));
             var wood = UiKit.Panel(canvas.transform, "Fondo", new Color32(0x3B, 0x24, 0x10, 255));
+            wood.sprite = MenuSprites.WoodWall();
+            wood.type = Image.Type.Simple;
             UiKit.Stretch(wood.rectTransform);
 
             stage = UiKit.Rect(canvas.transform, "Escenario");
@@ -66,7 +68,7 @@ namespace RobaColores.Game.Presentation
             stage.anchoredPosition = Vector2.zero;
             stage.gameObject.AddComponent<StageFitter>();
 
-            var shadow = UiKit.Panel(stage, "Sombra", new Color(0f, 0f, 0f, 0.4f));
+            var shadow = UiKit.Panel(stage, "Sombra", new Color(0f, 0f, 0f, 0.46f));
             shadow.sprite = MenuSprites.Parchment();
             shadow.raycastTarget = false;
             UiKit.Place(shadow.rectTransform, 0, 0, 1, 1, -4, -26, 24, 4);
@@ -182,13 +184,30 @@ namespace RobaColores.Game.Presentation
                 img.preserveAspect = true;
                 img.raycastTarget = false;
                 img.rectTransform.pivot = new Vector2(0.5f, 0f);   // antes de colocar: cambiar el pivote despues desplaza el rectangulo
-                Abs(img.rectTransform, 22 * K, (469 - 462) * K, (424 - 22) * K, (462 - 10) * K);
+                Abs(img.rectTransform, 54, 300, 610, 700);
                 titleArt = img.rectTransform;
             }
             else
             {
                 var t = UiKit.Label(titleHolder, "ROBA\nCOLORES", 170, TextAnchor.MiddleLeft, UiKit.Ink);
                 Abs(t.rectTransform, 70, 300, 900, 600);
+            }
+
+            var heroTexture = CharacterPortraitLibrary.GetCharacterArtwork(3);
+            var heroGlow = UiKit.Panel(titleHolder, "ResplandorCapitan", new Color32(235, 182, 91, 48));
+            heroGlow.sprite = MenuSprites.Circle();
+            heroGlow.raycastTarget = false;
+            Abs(heroGlow.rectTransform, 505, 120, 470, 730);
+            if (heroTexture != null && CharacterPortraitLibrary.GetArtworkMaterial() != null)
+            {
+                var heroObject = new GameObject("CapitanDeLaTripulacion", typeof(RectTransform), typeof(RawImage));
+                heroObject.transform.SetParent(titleHolder, false);
+                var hero = heroObject.GetComponent<RawImage>();
+                hero.texture = heroTexture;
+                hero.material = CharacterPortraitLibrary.GetArtworkMaterial();
+                hero.uvRect = CharacterPortraitLibrary.GetArtworkUvRect(heroTexture, 0.58f);
+                hero.raycastTarget = false;
+                Abs(hero.rectTransform, 495, 105, 500, 835);
             }
 
             string[] labels = { "JUGAR", "OPCIONES", "PERSONALIZAR" };
@@ -240,7 +259,7 @@ namespace RobaColores.Game.Presentation
             // Presentacion de los dados (decorativa y repetible).
             mainDice = DiceShowcase.Create(g, art, 120f, true);
             diceRect = (RectTransform)mainDice.transform;
-            diceRect.anchoredPosition = new Vector2(985f, 34f);
+            diceRect.anchoredPosition = new Vector2(1002f, 20f);
         }
 
         IEnumerator EnterMain()
@@ -345,55 +364,72 @@ namespace RobaColores.Game.Presentation
         void BuildOptions()
         {
             var g = Group("Opciones", out optionsGroup);
-            AddTheaterBackdrop(g);
-            Header(g, "Diario de la tripulación");
+            AddWoodBackdrop(g);
+            Header(g, "OPCIONES");
             var s = content.settings;
-            var sheet = FramePanel(g, UiKit.Parchment);
-            Abs(sheet.rectTransform, 100, 170, 1193, 720);
-            var intro = UiKit.Label(sheet.transform, "REGLAS DE ESTA AVENTURA", 25, TextAnchor.MiddleCenter, UiKit.Wood);
-            Abs(intro.rectTransform, 40, 628, 1113, 46);
+            var sheet = UiKit.Panel(g, "PergaminoOpciones", Color.white);
+            sheet.sprite = MenuSprites.Parchment();
+            Abs(sheet.rectTransform, 92, 130, 1209, 774);
 
-            string[] labels =
-            {
-                "Jugadores por partida",
-                "Personajes repetidos",
-                "Duración del minijuego",
-                "Unidades iniciales por color",
-                "Penalización del dado",
-                "Dado para decidir quién empieza",
-                "Dado de movimiento"
-            };
-            string[] values =
-            {
-                s.minPlayers + " - " + s.maxPlayers + " jugadores",
-                s.allowRepeatedCharacters ? "Permitidos" : "No permitidos",
-                s.minigameSeconds + " segundos",
-                s.initialUnitsPerColor + " unidades",
-                s.timePenaltySeconds + " segundos",
-                "Caras del 1 al 6",
-                "Avance, pierde turno o penalización"
-            };
-            for (int i = 0; i < labels.Length; i++)
-            {
-                float y = 552f - i * 76f;
-                var row = FramePanel(sheet.transform, new Color32(221, 202, 158, 255));
-                Abs(row.rectTransform, 36, y, 1121, 62);
-                var label = UiKit.Label(row.transform, labels[i], 27, TextAnchor.MiddleLeft, UiKit.Ink);
-                Abs(label.rectTransform, 24, 4, 445, 54);
-                var value = UiKit.Label(row.transform, values[i], 25, TextAnchor.MiddleRight, UiKit.Wood);
-                Abs(value.rectTransform, 485, 4, 600, 54);
-            }
+            var rules = UiKit.Label(sheet.transform,
+                "DADO DE ORDEN: caras del 1 al 6, para decidir quién empieza.\nDADO DE MOVIMIENTO: avanza del 1 al 4; las otras caras castigan.",
+                27, TextAnchor.UpperLeft, UiKit.Ink);
+            Abs(rules.rectTransform, 76, 564, 1050, 98);
 
-            var note = UiKit.Label(sheet.transform, "La cantidad de jugadores se elige antes de comenzar la partida.", 21, TextAnchor.MiddleCenter, UiKit.Wood);
-            Abs(note.rectTransform, 60, 10, 1073, 40);
+            var players = FramePanel(sheet.transform, new Color32(221, 202, 158, 255));
+            Abs(players.rectTransform, 72, 434, 500, 94);
+            var playersTitle = UiKit.Label(players.transform, "JUGADORES", 25, TextAnchor.MiddleLeft, UiKit.Ink);
+            Abs(playersTitle.rectTransform, 18, 45, 260, 34);
+            var playersValue = UiKit.Label(players.transform, s.minPlayers + " - " + s.maxPlayers, 34, TextAnchor.MiddleRight, UiKit.Wood);
+            Abs(playersValue.rectTransform, 280, 45, 185, 34);
+            var playersHint = UiKit.Label(players.transform, "Elige la cantidad antes de jugar", 18, TextAnchor.MiddleLeft, UiKit.Wood);
+            Abs(playersHint.rectTransform, 18, 12, 450, 28);
+
+            var repeat = FramePanel(sheet.transform, new Color32(221, 202, 158, 255));
+            Abs(repeat.rectTransform, 594, 434, 500, 94);
+            var repeatTitle = UiKit.Label(repeat.transform, "REPETIR PERSONAJES", 23, TextAnchor.MiddleLeft, UiKit.Ink);
+            Abs(repeatTitle.rectTransform, 18, 45, 315, 34);
+            var repeatValue = FramePanel(repeat.transform, s.allowRepeatedCharacters
+                ? new Color32(63, 117, 59, 255)
+                : new Color32(118, 52, 43, 255));
+            Abs(repeatValue.rectTransform, 350, 43, 126, 38);
+            var repeatText = UiKit.Label(repeatValue.transform, s.allowRepeatedCharacters ? "SÍ" : "NO", 22, TextAnchor.MiddleCenter, Color.white);
+            UiKit.Stretch(repeatText.rectTransform);
+            var repeatHint = UiKit.Label(repeat.transform, "Regla actual de la partida", 18, TextAnchor.MiddleLeft, UiKit.Wood);
+            Abs(repeatHint.rectTransform, 18, 12, 450, 28);
+
+            AddOptionSlider(sheet.rectTransform, "DURACIÓN DEL MINIJUEGO", s.minigameSeconds + " s",
+                Mathf.Clamp01(s.minigameSeconds / 180f), 306f);
+            AddOptionSlider(sheet.rectTransform, "PENALIZACIÓN DE TIEMPO (CARA 6)", s.timePenaltySeconds + " s",
+                Mathf.Clamp01(s.timePenaltySeconds / 30f), 164f);
+            var note = UiKit.Label(sheet.transform, "Los ajustes y valores de juego se configuran en GameSettings.", 19, TextAnchor.MiddleCenter, UiKit.Wood);
+            Abs(note.rectTransform, 72, 30, 1020, 35);
             BackButton(g);
+        }
+
+        void AddOptionSlider(RectTransform parent, string label, string value, float progress, float y)
+        {
+            var title = UiKit.Label(parent, label, 25, TextAnchor.MiddleLeft, UiKit.Ink);
+            Abs(title.rectTransform, 74, y + 52, 890, 36);
+            var number = UiKit.Label(parent, value, 25, TextAnchor.MiddleRight, UiKit.Wood);
+            Abs(number.rectTransform, 980, y + 52, 135, 36);
+
+            var track = FramePanel(parent, new Color32(84, 49, 30, 255));
+            Abs(track.rectTransform, 74, y, 1040, 40);
+            var fill = UiKit.Panel(track.transform, "Progreso", new Color32(186, 128, 65, 255));
+            UiKit.Place(fill.rectTransform, 0, 0, progress, 1, 5, 5, -2, -5);
+
+            var marker = UiKit.Panel(parent, "Moneda", UiKit.Gold);
+            marker.sprite = MenuSprites.Circle();
+            marker.raycastTarget = false;
+            Abs(marker.rectTransform, 74 + 1040 * progress - 16, y - 5, 50, 50);
         }
 
         void BuildGallery()
         {
             var g = Group("Personajes", out galleryGroup);
-            AddTheaterBackdrop(g);
-            Header(g, "Personajes");
+            AddWoodBackdrop(g);
+            Header(g, "PERSONAJES");
             int count = content.characters.Count;
             const int cols = 3;
             const float cw = 380f, ch = 300f, gap = 26f;
@@ -417,7 +453,7 @@ namespace RobaColores.Game.Presentation
                     UiKit.Stretch(portrait.rectTransform);
                     portrait.texture = art;
                     portrait.material = CharacterPortraitLibrary.GetArtworkMaterial();
-                    portrait.uvRect = new Rect(0.15f, 0f, 0.7f, 1f);
+                    portrait.uvRect = CharacterPortraitLibrary.GetArtworkUvRect(art, 138f / 225f);
                     portrait.raycastTarget = false;
                 }
                 else if (c.portrait != null)
@@ -433,15 +469,13 @@ namespace RobaColores.Game.Presentation
                 var desc = UiKit.Label(card.transform, c.description, 21, TextAnchor.UpperLeft, UiKit.Parchment);
                 Abs(desc.rectTransform, 164, 42, 192, 124);
             }
-            var note = UiKit.Label(g, "Cada personaje tiene su propia ilustración y color en la aventura.", 23, TextAnchor.MiddleCenter, UiKit.Parchment);
-            Abs(note.rectTransform, 100, 130, 1193, 50);
             BackButton(g);
         }
 
-        static void AddTheaterBackdrop(RectTransform parent)
+        static void AddWoodBackdrop(RectTransform parent)
         {
-            var backdrop = UiKit.Panel(parent, "EscenarioPirata", Color.white);
-            backdrop.sprite = MenuSprites.Theater();
+            var backdrop = UiKit.Panel(parent, "ParedDeMadera", Color.white);
+            backdrop.sprite = MenuSprites.WoodWall();
             backdrop.raycastTarget = false;
             UiKit.Stretch(backdrop.rectTransform);
             backdrop.transform.SetAsFirstSibling();
@@ -449,14 +483,16 @@ namespace RobaColores.Game.Presentation
 
         void Header(RectTransform parent, string text)
         {
-            var t = UiKit.Label(parent, text, 100, TextAnchor.MiddleCenter, UiKit.Ink);
-            Abs(t.rectTransform, 100, 900, 1193, 140);
+            var plaque = FramePanel(parent, new Color32(144, 91, 48, 255));
+            Abs(plaque.rectTransform, 445, 886, 500, 128);
+            var t = UiKit.Label(parent, text, 66, TextAnchor.MiddleCenter, UiKit.Parchment);
+            Abs(t.rectTransform, 455, 897, 480, 105);
         }
 
         void BackButton(RectTransform parent)
         {
-            var back = FrameButton(parent, "VOLVER", 42, () => GoTo(mainGroup, () => StartCoroutine(EnterMain())), UiKit.ParchmentDark);
-            Abs((RectTransform)back.transform, 60, 52, 260, 76);
+            var back = FrameButton(parent, "VOLVER", 38, () => GoTo(mainGroup, () => StartCoroutine(EnterMain())), new Color32(143, 87, 47, 255));
+            Abs((RectTransform)back.transform, 54, 42, 270, 78);
         }
     }
 }
